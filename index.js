@@ -4205,9 +4205,27 @@
      const audioAPI = new WebAudioAPI();
      const I32_MAX = 2147483647;
      let syncStart = 0;
+     let midiDevices = [], midiInstruments = [], audioDevices = [];
      audioAPI.createTrack('default');
      audioAPI.start();
      const availableEffects = audioAPI.getAvailableEffects();
+     audioAPI.getAvailableMidiDevices().then(returnMidiDevice, fail);
+     audioAPI.getAvailableAudioInputDevices().then(returnAudioDevice, fail);
+     audioAPI.getAvailableInstruments('http://localhost:8000/extensions/MusicApp/instruments').then(
+         instruments => instruments.forEach(
+             instrument => midiInstruments.push(instrument)
+         )
+     );
+
+    
+         /**
+       * Object representing a mapping between an encoding file type and its unique internal code.
+       * @constant {Object.<string, number>}
+       */
+         const EncodingType = {
+          WAV: 1
+      };
+
 
 
       /**
@@ -4239,6 +4257,92 @@
               ['tremeloFrequency'] : 18,
           }],
       };
+
+      /**
+       * Creates a list of all available MIDI devices
+       * @param {[String]} devices - available MIDI device.
+       */
+      function returnMidiDevice(devices) {
+          midiDevices = devices;
+          console.log(devices);
+      }
+
+      /**
+       * Creates a list of all available audio-input devices
+       * @param {[String]} devices - available audio-input devices.
+       */
+      function returnAudioDevice(devices) {
+          audioDevices = devices;
+          console.log(devices);
+      }
+
+      /**
+       * Runs when the audio API can't return a list of available devices.
+       */
+      function fail() {
+          console.log('something went wrong');
+      }
+
+      /**
+       * Connects a MIDI device to the WebAudioAPI
+       * @param {String} device - Name of the MIDI device being connected.
+       */
+      function midiConnect(device) {
+          if (device != "") {
+              audioAPI.connectMidiDeviceToTrack('default', device).then(() => {
+                  console.log('Connected to MIDI device!');
+              });
+              // audioAPI.registerMidiDeviceCallback(device, midiCallback);
+          }
+      }
+
+      /**
+       * Connects and audio input device to NetsBlox
+       * @param {String} device - Name of the audio device being connected.
+       */
+      function audioConnect(device) {
+          if (device != "") {
+              audioAPI.connectAudioInputDeviceToTrack('default', device).then(() => {
+                  console.log('Connected to audio device!');
+              });
+          }
+      }
+
+      /**
+       * Connects an instrument sample to the WebAudioAPI
+       * @param {String} instrument - Name of instrument being loaded.
+       */
+      function changeInsturment(instrument) {
+          audioAPI.start();
+          audioAPI.updateInstrument('default', instrument).then(() => {
+              console.log('Instrument loading complete!');
+          });
+      }
+
+      /**
+       * Exports an AudioClip as an audio file.
+       * @async
+       * @param {AudioClip} clip - the clip being exported.
+       * @param {String} format - the format of the file being created.
+       */
+      async function exportClip(clip, format) {
+          const wavLink = document.getElementById("wav-link");
+          const blob = await clip.getEncodedData(EncodingType[format]);
+          wavLink.href = URL.createObjectURL(blob, { type: "audio/wav" });
+          wavLink.click();
+      }
+
+      /**
+       * Converts an AudioClip k to a Snap! Sound.
+       * @asyn
+       * @param {AudioClip} clip - The clip being rendered.
+       * @returns A Snap! Sound.
+       */
+      async function clipToSnap(clip) {
+          const blob = await clip.getEncodedData(EncodingType['WAV']);
+          const audio = new Audio(URL.createObjectURL(blob, { type: "audio/wav" }));
+          return new Sound(audio, 'netsblox-sound');
+      }
 
       function base64toArrayBuffer(base64){
           var binaryString = window.atob(base64.replace("data:audio/mpeg;base64,", ""));
@@ -4367,7 +4471,19 @@
                   new Extension.Palette.Block('setTrackPanning'),
                   new Extension.Palette.Block('applyTrackEffect'),
                   new Extension.Palette.Block('setTrackEffect'),
-                  new Extension.Palette.Block('presetEffect')
+                  new Extension.Palette.Block('presetEffect'),
+                  new Extension.Palette.Block('setAudioDevice'),
+                  new Extension.Palette.Block('disconnectAudioDevice'),
+                  new Extension.Palette.Block('startRecordingAudio'),
+                  new Extension.Palette.Block('recordForDurationAudio'),
+                  new Extension.Palette.Block('setMidiDevice'),
+                  new Extension.Palette.Block('disconnectMidiDevice'),
+                  new Extension.Palette.Block('setInstrument'),
+                  new Extension.Palette.Block('startRecording'),
+                  new Extension.Palette.Block('recordForDuration'),
+                  new Extension.Palette.Block('stopRecording'),
+                  new Extension.Palette.Block('exportAudio'),
+                  new Extension.Palette.Block('convertToSnap')
               ];
               return [
                   new Extension.PaletteCategory('music', blocks, SpriteMorph),
@@ -4445,6 +4561,60 @@
                           throw Error('must select an effect');
                       }         
                   }),
+                  block('setAudioDevice', 'command', 'music', 'audio device: %audioDevice', [''], function (device) {
+                      audioConnect(device);
+                  }),
+                  block('disconnectAudioDevice', 'command', 'music', 'disconnect audio device', [], function () {
+                      this.runAsyncFn(async () => {
+                          await audioAPI.disconnectAudioInputDeviceFromTrack('default');
+                      }, { args: [], timeout: I32_MAX });
+                  }),
+                  block('startRecordingAudio', 'reporter', 'music', 'start recording audio', [], function () {
+                      return audioAPI.recordAudioClip(
+                          'default', audioAPI.getCurrentTime()
+                      );
+                  }),
+                  block('recordForDurationAudio', 'reporter', 'music', 'record audio for %n seconds', [0], function (time) {
+                      return audioAPI.recordAudioClip(
+                          'default', audioAPI.getCurrentTime(), time
+                      );
+                  }),
+                  block('setMidiDevice', 'command', 'music', 'midi device: %webMidiDevice', [''], function(device) {
+                      midiConnect(device);
+                  }),
+                  block('disconnectMidiDevice', 'command', 'music', 'disconnect midi device', [], function () {
+                      this.runAsyncFn(async () => {
+                          await audioAPI.disconnectMidiDeviceFromTrack('default');
+                      }, { args: [], timeout: I32_MAX });
+                  }),
+                  block('setInstrument', 'command', 'music', 'instrument %webMidiInstrument', [''], function(instrument) {
+                      changeInsturment(instrument);
+                  }),
+                  block('startRecording', 'reporter', 'music', 'start recording', [], function() {
+                      return audioAPI.recordMidiClip(
+                          'default', audioAPI.getCurrentTime()
+                      );
+                  }),
+                  block('recordForDuration', 'reporter', 'music', 'record for %n seconds', [0], function(time) {
+                      return audioAPI.recordMidiClip(
+                          'default', audioAPI.getCurrentTime(), time
+                      );
+                  }),
+                  block('stopRecording', 'command', 'music', 'stop recording %s', ['clip'], function(clip) {
+                      this.runAsyncFn(async () => {
+                          await clip.finalize();
+                      }, { args: [], timeout: I32_MAX });
+                  }),
+                  block('exportAudio', 'command', 'music', 'bounce %s as %fileFormats', ['clip'], function (clip, format) {
+                      this.runAsyncFn(async () => {
+                          await exportClip(clip, format);
+                      }, { args: [], timeout: I32_MAX });
+                  }),
+                  block('convertToSnap', 'reporter', 'music', 'convert %s to Snap! Sound', ['clip'], function (clip) {
+                      return this.runAsyncFn(async () => {
+                          return await clipToSnap(clip);
+                      }, { args: [], timeout: I32_MAX });
+                  }),
               ];
           }
           getLabelParts() { 
@@ -4493,6 +4663,30 @@
                   null, // text
                   false, //numeric
                   identityMap(['on', 'off']),
+                  true, // readonly (no arbitrary text)
+              )),
+              new Extension.LabelPart('webMidiInstrument', () => new InputSlotMorph(
+                  null, // text
+                  false, //numeric
+                  identityMap(midiInstruments),
+                  true, // readonly (no arbitrary text)
+              )),
+              new Extension.LabelPart('webMidiDevice', () => new InputSlotMorph(
+                  null, // text
+                  false, //numeric
+                  identityMap(midiDevices),
+                  true, // readonly (no arbitrary text)
+              )),
+              new Extension.LabelPart('fileFormats', () => new InputSlotMorph(
+                  null, // text
+                  false, //numeric
+                  identityMap(['WAV']),
+                  true, // readonly (no arbitrary text)
+              )),
+              new Extension.LabelPart('audioDevice', () => new InputSlotMorph(
+                  null, // text
+                  false, //numeric
+                  identityMap(audioDevices),
                   true, // readonly (no arbitrary text)
               )),
           ];           

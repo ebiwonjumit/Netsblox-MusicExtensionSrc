@@ -88,7 +88,7 @@ import {WebAudioAPI} from "./WebAudioAPI/build/lib/webAudioAPI";
      */
     function midiConnect(device) {
         if (device != "") {
-            audioAPI.connectMidiDeviceToTrack('defaultTrack', device).then(() => {
+            audioAPI.connectMidiDeviceToTrack('default', device).then(() => {
                 console.log('Connected to MIDI device!');
             });
             // audioAPI.registerMidiDeviceCallback(device, midiCallback);
@@ -101,7 +101,7 @@ import {WebAudioAPI} from "./WebAudioAPI/build/lib/webAudioAPI";
      */
     function audioConnect(device) {
         if (device != "") {
-            audioAPI.connectAudioInputDeviceToTrack('defaultTrack', device).then(() => {
+            audioAPI.connectAudioInputDeviceToTrack('default', device).then(() => {
                 console.log('Connected to audio device!');
             });
         }
@@ -113,7 +113,7 @@ import {WebAudioAPI} from "./WebAudioAPI/build/lib/webAudioAPI";
      */
     function changeInsturment(instrument) {
         audioAPI.start();
-        audioAPI.updateInstrument('defaultTrack', instrument).then(() => {
+        audioAPI.updateInstrument('default', instrument).then(() => {
             console.log('Instrument loading complete!');
         });
     }
@@ -375,17 +375,17 @@ import {WebAudioAPI} from "./WebAudioAPI/build/lib/webAudioAPI";
                 }),
                 block('disconnectAudioDevice', 'command', 'music', 'disconnect audio device', [], function () {
                     this.runAsyncFn(async () => {
-                        await audioAPI.disconnectAudioInputDeviceFromTrack('defaultTrack');
+                        await audioAPI.disconnectAudioInputDeviceFromTrack('default');
                     }, { args: [], timeout: I32_MAX });
                 }),
                 block('startRecordingAudio', 'reporter', 'music', 'start recording audio', [], function () {
                     return audioAPI.recordAudioClip(
-                        'defaultTrack', audioAPI.getCurrentTime()
+                        'default', audioAPI.getCurrentTime()
                     );
                 }),
                 block('recordForDurationAudio', 'reporter', 'music', 'record audio for %n seconds', [0], function (time) {
                     return audioAPI.recordAudioClip(
-                        'defaultTrack', audioAPI.getCurrentTime(), time
+                        'default', audioAPI.getCurrentTime(), time
                     );
                 }),
                 block('setMidiDevice', 'command', 'music', 'midi device: %webMidiDevice', [''], function(device) {
@@ -393,7 +393,7 @@ import {WebAudioAPI} from "./WebAudioAPI/build/lib/webAudioAPI";
                 }),
                 block('disconnectMidiDevice', 'command', 'music', 'disconnect midi device', [], function () {
                     this.runAsyncFn(async () => {
-                        await audioAPI.disconnectMidiDeviceFromTrack('defaultTrack');
+                        await audioAPI.disconnectMidiDeviceFromTrack('default');
                     }, { args: [], timeout: I32_MAX });
                 }),
                 block('setInstrument', 'command', 'music', 'instrument %webMidiInstrument', [''], function(instrument) {
@@ -401,12 +401,12 @@ import {WebAudioAPI} from "./WebAudioAPI/build/lib/webAudioAPI";
                 }),
                 block('startRecording', 'reporter', 'music', 'start recording', [], function() {
                     return audioAPI.recordMidiClip(
-                        'defaultTrack', audioAPI.getCurrentTime()
+                        'default', audioAPI.getCurrentTime()
                     );
                 }),
                 block('recordForDuration', 'reporter', 'music', 'record for %n seconds', [0], function(time) {
                     return audioAPI.recordMidiClip(
-                        'defaultTrack', audioAPI.getCurrentTime(), time
+                        'default', audioAPI.getCurrentTime(), time
                     );
                 }),
                 block('stopRecording', 'command', 'music', 'stop recording %s', ['clip'], function(clip) {
