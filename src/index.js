@@ -265,7 +265,7 @@ import {WebAudioAPI} from "./WebAudioAPI/build/lib/webAudioAPI";
 
         getCategories() {
             return [
-                new Extension.Category('music', new Color(250, 51, 51)),
+                new Extension.Category('music', new Color(148,0,211)),
             ];
         }
 
