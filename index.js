@@ -4206,9 +4206,27 @@
      const I32_MAX = 2147483647;
      let syncStart = 0;
      let midiDevices = [], midiInstruments = [], audioDevices = [];
+     let midiDevices = [], midiInstruments = [], audioDevices = [];
      audioAPI.createTrack('default');
      audioAPI.start();
      const availableEffects = audioAPI.getAvailableEffects();
+     audioAPI.getAvailableMidiDevices().then(returnMidiDevice, fail);
+     audioAPI.getAvailableAudioInputDevices().then(returnAudioDevice, fail);
+     audioAPI.getAvailableInstruments('http://localhost:8000/extensions/MusicApp/instruments').then(
+         instruments => instruments.forEach(
+             instrument => midiInstruments.push(instrument)
+         )
+     );
+
+    
+         /**
+       * Object representing a mapping between an encoding file type and its unique internal code.
+       * @constant {Object.<string, number>}
+       */
+         const EncodingType = {
+          WAV: 1
+      };
+
      audioAPI.getAvailableMidiDevices().then(returnMidiDevice, fail);
      audioAPI.getAvailableAudioInputDevices().then(returnAudioDevice, fail);
      audioAPI.getAvailableInstruments('http://localhost:8000/extensions/MusicApp/instruments').then(
