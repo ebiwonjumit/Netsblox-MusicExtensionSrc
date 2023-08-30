@@ -4295,7 +4295,7 @@
        * @param {String} trackName - Name of the Track 
        * @param {String} device - Name of the MIDI device being connected.
        */
-      function midiConnect(trackName,device) {
+      function midiConnect(trackName, device) {
           if (device != "") {
               audioAPI.connectMidiDeviceToTrack(trackName, device).then(() => {
                   console.log('Connected to MIDI device!');
@@ -4588,14 +4588,15 @@
                       }         
                   }),
                   block('setInputDevice', 'command', 'music', 'set input device: %inputDevice', [''], function (device) {
+                      const trackName = this.receiver.id;
                       if (device === '') 
                           this.runAsyncFn(async () => {
-                              disconnectDevices();
+                              disconnectDevices(trackName);
                           }, { args: [], timeout: I32_MAX });
                       else if (midiDevices.indexOf(device) != -1)
-                          midiConnect(device);
+                          midiConnect(trackName, device);
                       else if (audioDevices.indexOf(device != -1))
-                          audioConnect(device);
+                          audioConnect(trackName, device);
                       else
                           throw Error('device not found');
                   }),
