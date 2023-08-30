@@ -8,6 +8,8 @@ import {WebAudioAPI} from "./WebAudioAPI/build/lib/webAudioAPI";
    audioAPI.createTrack('default');
    audioAPI.start();
    const availableEffects = audioAPI.getAvailableEffects();
+   const availableMidiNotes = audioAPI.getAvailableNotes();
+   const availableNoteDurations = audioAPI.getAvailableNoteDurations();
    audioAPI.getAvailableMidiDevices().then(returnMidiDevice, fail);
    audioAPI.getAvailableAudioInputDevices().then(returnAudioDevice, fail);
 
@@ -89,11 +91,12 @@ import {WebAudioAPI} from "./WebAudioAPI/build/lib/webAudioAPI";
 
     /**
      * Connects a MIDI device to the WebAudioAPI
+     * @param {String} trackName - Name of the Track 
      * @param {String} device - Name of the MIDI device being connected.
      */
-    function midiConnect(device) {
+    function midiConnect(trackName,device) {
         if (device != "") {
-            audioAPI.connectMidiDeviceToTrack('default', device).then(() => {
+            audioAPI.connectMidiDeviceToTrack(trackName, device).then(() => {
                 console.log('Connected to MIDI device!');
             });
             // audioAPI.registerMidiDeviceCallback(device, midiCallback);
@@ -102,11 +105,12 @@ import {WebAudioAPI} from "./WebAudioAPI/build/lib/webAudioAPI";
 
     /**
      * Connects and audio input device to NetsBlox
+     * @param {String} trackName - Name of the Track 
      * @param {String} device - Name of the audio device being connected.
      */
-    function audioConnect(device) {
+    function audioConnect(trackName,device) {
         if (device != "") {
-            audioAPI.connectAudioInputDeviceToTrack('default', device).then(() => {
+            audioAPI.connectAudioInputDeviceToTrack(trackName, device).then(() => {
                 console.log('Connected to audio device!');
             });
         }
@@ -114,11 +118,12 @@ import {WebAudioAPI} from "./WebAudioAPI/build/lib/webAudioAPI";
 
     /**
      * Connects an instrument sample to the WebAudioAPI
+     * @param {String} trackName - Name of the Track 
      * @param {String} instrument - Name of instrument being loaded.
      */
-    function changeInsturment(instrument) {
+    function changeInsturment(trackName,instrument) {
         audioAPI.start();
-        audioAPI.updateInstrument('default', instrument).then(() => {
+        audioAPI.updateInstrument(trackName, instrument).then(() => {
             console.log('Instrument loading complete!');
         });
     }
@@ -150,14 +155,15 @@ import {WebAudioAPI} from "./WebAudioAPI/build/lib/webAudioAPI";
 
     /**
      * Disconnects all audio and midi devices from NetsBlox
+     * @param {String} trackName - name of the Track 
      * @async
      */
-    async function disconnectDevices() {
+    async function disconnectDevices(trackName) {
         console.log('device disconnected');
         if (audioDevices.length > 0)
-            await audioAPI.disconnectAudioInputDeviceFromTrack('default');
+            await audioAPI.disconnectAudioInputDeviceFromTrack(trackName);
         if (midiDevices.length > 0)
-            await audioAPI.disconnectMidiDeviceFromTrack('default');
+            await audioAPI.disconnectMidiDeviceFromTrack(trackName);
     }
 
     function base64toArrayBuffer(base64){
@@ -306,6 +312,7 @@ import {WebAudioAPI} from "./WebAudioAPI/build/lib/webAudioAPI";
                 new Extension.Palette.Block('recordForDuration'),
                 new Extension.Palette.Block('stopRecording'),
                 new Extension.Palette.Block('exportAudio'),
+                new Extension.Palette.Block('playNote'),
                 new Extension.Palette.Block('convertToSnap')
             ];
             return [
@@ -322,7 +329,6 @@ import {WebAudioAPI} from "./WebAudioAPI/build/lib/webAudioAPI";
                 block('playAudioClip', 'command', 'music', 'play audio clip %s', ['clip'], function (audioBuffer){
                     this.runAsyncFn(async () =>{
                         const trackName = this.receiver.id;
-                        console.log(audioBuffer);
                         const duration = await playAudio(audioBuffer, trackName);
                         await wait(duration-.02);
                     },{ args: [], timeout: I32_MAX });
@@ -332,6 +338,12 @@ import {WebAudioAPI} from "./WebAudioAPI/build/lib/webAudioAPI";
                         const trackName = this.receiver.id;
                         const duration = await playAudioForDuration(audioBuffer, trackName, dur);
                         await wait(duration-Math.max(.02,0));
+                    },{ args: [], timeout: I32_MAX });
+                }),
+                block('playNote', 'command', 'music', 'play note %midiNotes for %noteDurations', ['', ''], function (note,duration){
+                    this.runAsyncFn(async () =>{
+                        const trackName = this.receiver.id;
+                        await wait(audioAPI.playNote(trackName,availableMidiNotes[note], audioAPI.getCurrentTime(), availableNoteDurations[duration]));
                     },{ args: [], timeout: I32_MAX });
                 }),
                 block('stopClips', 'command', 'music', 'stop all clips', [], function (){
@@ -397,26 +409,31 @@ import {WebAudioAPI} from "./WebAudioAPI/build/lib/webAudioAPI";
                         throw Error('device not found');
                 }),
                 block('startRecordingAudio', 'reporter', 'music', 'start recording audio', [], function () {
+                    const trackName = this.receiver.id;
                     return audioAPI.recordAudioClip(
-                        'default', audioAPI.getCurrentTime()
+                        trackName, audioAPI.getCurrentTime()
                     );
                 }),
                 block('recordForDurationAudio', 'reporter', 'music', 'record audio for %n seconds', [0], function (time) {
+                    const trackName = this.receiver.id;
                     return audioAPI.recordAudioClip(
-                        'default', audioAPI.getCurrentTime(), time
+                        trackName, audioAPI.getCurrentTime(), time
                     );
                 }),
                 block('setInstrument', 'command', 'music', 'instrument %webMidiInstrument', [''], function(instrument) {
-                    changeInsturment(instrument);
+                    const trackName = this.receiver.id;
+                    changeInsturment(trackName,instrument);
                 }),
                 block('startRecording', 'reporter', 'music', 'start recording', [], function() {
+                    const trackName = this.receiver.id;
                     return audioAPI.recordMidiClip(
-                        'default', audioAPI.getCurrentTime()
+                        trackName, audioAPI.getCurrentTime()
                     );
                 }),
                 block('recordForDuration', 'reporter', 'music', 'record for %n seconds', [0], function(time) {
+                    const trackName = this.receiver.id;
                     return audioAPI.recordMidiClip(
-                        'default', audioAPI.getCurrentTime(), time
+                        trackName, audioAPI.getCurrentTime(), time
                     );
                 }),
                 block('stopRecording', 'command', 'music', 'stop recording %s', ['clip'], function(clip) {
@@ -470,6 +487,18 @@ import {WebAudioAPI} from "./WebAudioAPI/build/lib/webAudioAPI";
                 null, //text
                 false, //numeric
                 identityMap(Object.keys(availableEffects)),
+                true, //readonly (no arbitrary text)
+            )),
+            new Extension.LabelPart('midiNotes', () => new InputSlotMorph(
+                null, //text
+                false, //numeric
+                identityMap(Object.keys(availableMidiNotes)),
+                true, //readonly (no arbitrary text)
+            )),
+            new Extension.LabelPart('noteDurations', () => new InputSlotMorph(
+                null, //text
+                false, //numeric
+                identityMap(Object.keys(availableNoteDurations)),
                 true, //readonly (no arbitrary text)
             )),
             new Extension.LabelPart('fxPreset', () => new InputSlotMorph(
