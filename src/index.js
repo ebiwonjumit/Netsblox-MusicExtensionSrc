@@ -18,18 +18,18 @@ import {WebAudioAPI} from "./WebAudioAPI/build/lib/webAudioAPI";
    const releaseRoot = 'https://extensions.netsblox.org/extensions/BeatsBlox/instruments/';
    const instrumentLocation = window.origin.includes('localhost') ? devRoot : releaseRoot;
 
-   audioAPI.getAvailableInstruments(instrumentLocation).then(
-       instruments => instruments.forEach(
-           instrument => midiInstruments.push(instrument)
-       )
-   );
+    audioAPI.getAvailableInstruments(instrumentLocation).then(
+        instruments => instruments.forEach(
+            instrument => midiInstruments.push(instrument)
+        )
+    );
 
   
-       /**
+    /**
      * Object representing a mapping between an encoding file type and its unique internal code.
      * @constant {Object.<string, number>}
      */
-       const EncodingType = {
+    const EncodingType = {
         WAV: 1
     };
 
@@ -125,7 +125,6 @@ import {WebAudioAPI} from "./WebAudioAPI/build/lib/webAudioAPI";
      * @param {String} instrument - Name of instrument being loaded.
      */
     function changeInsturment(trackName,instrument) {
-        audioAPI.start();
         audioAPI.updateInstrument(trackName, instrument).then(() => {
             console.log('Instrument loading complete!');
         });
@@ -399,6 +398,7 @@ import {WebAudioAPI} from "./WebAudioAPI/build/lib/webAudioAPI";
                 }),
                 block('setInputDevice', 'command', 'music', 'set input device: %inputDevice', [''], function (device) {
                     const trackName = this.receiver.id;
+
                     if (device === '') 
                         this.runAsyncFn(async () => {
                             disconnectDevices(trackName);
@@ -409,6 +409,13 @@ import {WebAudioAPI} from "./WebAudioAPI/build/lib/webAudioAPI";
                         audioConnect(trackName, device);
                     else
                         throw Error('device not found');
+
+                    if (midiInstruments.length > 0)
+                        audioAPI.updateInstrument(trackName, midiInstruments[0]).then(() => {
+                            console.log('default instrument set');
+                        });
+                    else
+                        console.log('no default instruments');
                 }),
                 block('startRecording', 'command', 'music', 'start recording', [], function () {
                     const trackName = this.receiver.id;
@@ -442,7 +449,7 @@ import {WebAudioAPI} from "./WebAudioAPI/build/lib/webAudioAPI";
                     }
                     recordingInProgress = true;
                 }),
-                block('setInstrument', 'command', 'music', 'instrument %webMidiInstrument', [''], function(instrument) {
+                block('setInstrument', 'command', 'music', 'set instrument %webMidiInstrument', [''], function(instrument) {
                     const trackName = this.receiver.id;
                     changeInsturment(trackName,instrument);
                 }),
