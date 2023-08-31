@@ -4531,10 +4531,11 @@
                           await wait(duration-Math.max(.02,0));
                       },{ args: [], timeout: I32_MAX });
                   }),
-                  block('playNote', 'command', 'music', 'play note %midiNotes for %noteDurations', ['', ''], function (note,duration){
+                  block('playNote', 'command', 'music', 'play note %midiNotes for %noteDurations', ['', ''], function (note,noteDuration){
                       this.runAsyncFn(async () =>{
                           const trackName = this.receiver.id;
-                          await wait(audioAPI.playNote(trackName,availableMidiNotes[note], audioAPI.getCurrentTime(), availableNoteDurations[duration]));
+                          const blockduration = await audioAPI.playNote(trackName,availableMidiNotes[note], audioAPI.getCurrentTime(), availableNoteDurations[noteDuration]);
+                          await wait(blockduration);
                       },{ args: [], timeout: I32_MAX });
                   }),
                   block('stopClips', 'command', 'music', 'stop all clips', [], function (){
