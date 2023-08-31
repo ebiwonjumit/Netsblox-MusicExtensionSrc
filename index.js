@@ -4206,6 +4206,7 @@
      const I32_MAX = 2147483647;
      let syncStart = 0;
      let midiDevices = [], midiInstruments = [], audioDevices = [];
+     let lastRecordedClip = null, recordingInProgress = false, currentDeviceType;
      audioAPI.createTrack('default');
      audioAPI.start();
      const availableEffects = audioAPI.getAvailableEffects();
@@ -4218,18 +4219,18 @@
      const releaseRoot = 'https://extensions.netsblox.org/extensions/BeatsBlox/instruments/';
      const instrumentLocation = window.origin.includes('localhost') ? devRoot : releaseRoot;
 
-     audioAPI.getAvailableInstruments(instrumentLocation).then(
-         instruments => instruments.forEach(
-             instrument => midiInstruments.push(instrument)
-         )
-     );
+      audioAPI.getAvailableInstruments(instrumentLocation).then(
+          instruments => instruments.forEach(
+              instrument => midiInstruments.push(instrument)
+          )
+      );
 
     
-         /**
+      /**
        * Object representing a mapping between an encoding file type and its unique internal code.
        * @constant {Object.<string, number>}
        */
-         const EncodingType = {
+      const EncodingType = {
           WAV: 1
       };
 
@@ -4295,12 +4296,13 @@
        * @param {String} trackName - Name of the Track 
        * @param {String} device - Name of the MIDI device being connected.
        */
-      function midiConnect(trackName,device) {
+      function midiConnect(trackName, device) {
           if (device != "") {
               audioAPI.connectMidiDeviceToTrack(trackName, device).then(() => {
                   console.log('Connected to MIDI device!');
               });
               // audioAPI.registerMidiDeviceCallback(device, midiCallback);
+              currentDeviceType = 'midi';
           }
       }
 
@@ -4314,6 +4316,7 @@
               audioAPI.connectAudioInputDeviceToTrack(trackName, device).then(() => {
                   console.log('Connected to audio device!');
               });
+              currentDeviceType = 'audio';
           }
       }
 
@@ -4323,7 +4326,6 @@
        * @param {String} instrument - Name of instrument being loaded.
        */
       function changeInsturment(trackName,instrument) {
-          audioAPI.start();
           audioAPI.updateInstrument(trackName, instrument).then(() => {
               console.log('Instrument loading complete!');
           });
@@ -4496,15 +4498,13 @@
                   new Extension.Palette.Block('setTrackEffect'),
                   new Extension.Palette.Block('presetEffect'),
                   new Extension.Palette.Block('setInputDevice'),
-                  new Extension.Palette.Block('startRecordingAudio'),
-                  new Extension.Palette.Block('recordForDurationAudio'),
                   new Extension.Palette.Block('setInstrument'),
                   new Extension.Palette.Block('startRecording'),
                   new Extension.Palette.Block('recordForDuration'),
                   new Extension.Palette.Block('stopRecording'),
                   new Extension.Palette.Block('exportAudio'),
                   new Extension.Palette.Block('playNote'),
-                  new Extension.Palette.Block('convertToSnap')
+                  new Extension.Palette.Block('getLastRecordedClip'),
               ];
               return [
                   new Extension.PaletteCategory('music', blocks, SpriteMorph),
@@ -4589,59 +4589,82 @@
                       }         
                   }),
                   block('setInputDevice', 'command', 'music', 'set input device: %inputDevice', [''], function (device) {
+                      const trackName = this.receiver.id;
+
                       if (device === '') 
                           this.runAsyncFn(async () => {
-                              disconnectDevices();
+                              disconnectDevices(trackName);
                           }, { args: [], timeout: I32_MAX });
                       else if (midiDevices.indexOf(device) != -1)
-                          midiConnect(device);
+                          midiConnect(trackName, device);
                       else if (audioDevices.indexOf(device != -1))
-                          audioConnect(device);
+                          audioConnect(trackName, device);
                       else
                           throw Error('device not found');
+
+                      if (midiInstruments.length > 0)
+                          audioAPI.updateInstrument(trackName, midiInstruments[0]).then(() => {
+                              console.log('default instrument set');
+                          });
+                      else
+                          console.log('no default instruments');
                   }),
-                  block('startRecordingAudio', 'reporter', 'music', 'start recording audio', [], function () {
+                  block('startRecording', 'command', 'music', 'start recording', [], function () {
                       const trackName = this.receiver.id;
-                      return audioAPI.recordAudioClip(
-                          trackName, audioAPI.getCurrentTime()
-                      );
+                      switch (currentDeviceType) {
+                          case 'midi':
+                              lastRecordedClip = audioAPI.recordMidiClip(
+                                  trackName, audioAPI.getCurrentTime()
+                              );
+                              break;
+                          case 'audio':
+                              lastRecordedClip = audioAPI.recordAudioClip(
+                                  trackName, audioAPI.getCurrentTime()
+                              );
+                              break;
+                      }
+                      recordingInProgress = true;
                   }),
-                  block('recordForDurationAudio', 'reporter', 'music', 'record audio for %n seconds', [0], function (time) {
+                  block('recordForDuration', 'command', 'music', 'record for %n seconds', [0], function (time) {
                       const trackName = this.receiver.id;
-                      return audioAPI.recordAudioClip(
-                          trackName, audioAPI.getCurrentTime(), time
-                      );
+                      switch (currentDeviceType) {
+                          case 'midi':
+                              lastRecordedClip = audioAPI.recordMidiClip(
+                                  trackName, audioAPI.getCurrentTime(), time
+                              );
+                              break;
+                          case 'audio':
+                              lastRecordedClip = audioAPI.recordAudioClip(
+                                  trackName, audioAPI.getCurrentTime(), time
+                              );
+                              break;
+                      }
+                      recordingInProgress = true;
                   }),
-                  block('setInstrument', 'command', 'music', 'instrument %webMidiInstrument', [''], function(instrument) {
+                  block('setInstrument', 'command', 'music', 'set instrument %webMidiInstrument', [''], function(instrument) {
                       const trackName = this.receiver.id;
                       changeInsturment(trackName,instrument);
                   }),
-                  block('startRecording', 'reporter', 'music', 'start recording', [], function() {
-                      const trackName = this.receiver.id;
-                      return audioAPI.recordMidiClip(
-                          trackName, audioAPI.getCurrentTime()
-                      );
-                  }),
-                  block('recordForDuration', 'reporter', 'music', 'record for %n seconds', [0], function(time) {
-                      const trackName = this.receiver.id;
-                      return audioAPI.recordMidiClip(
-                          trackName, audioAPI.getCurrentTime(), time
-                      );
-                  }),
-                  block('stopRecording', 'command', 'music', 'stop recording %s', ['clip'], function(clip) {
+                  block('stopRecording', 'command', 'music', 'stop recording', [], function() {
                       this.runAsyncFn(async () => {
-                          await clip.finalize();
+                          await lastRecordedClip.finalize();
                       }, { args: [], timeout: I32_MAX });
+                      recordingInProgress = false;
                   }),
                   block('exportAudio', 'command', 'music', 'bounce %s as %fileFormats', ['clip'], function (clip, format) {
                       this.runAsyncFn(async () => {
                           await exportClip(clip, format);
                       }, { args: [], timeout: I32_MAX });
                   }),
-                  block('convertToSnap', 'reporter', 'music', 'convert %s to Snap! Sound', ['clip'], function (clip) {
-                      return this.runAsyncFn(async () => {
-                          return await clipToSnap(clip);
-                      }, { args: [], timeout: I32_MAX });
+                  block('getLastRecordedClip', 'reporter', 'music', 'get last recorded clip', [], function () {
+                      if (recordingInProgress)
+                          throw Error('recording in progress');
+                      else if (lastRecordedClip == null)
+                          throw Error('no clip found');
+                      else
+                          return this.runAsyncFn(async () => {
+                              return await clipToSnap(lastRecordedClip);
+                          }, { args: [], timeout: I32_MAX });
                   }),
               ];
           }
