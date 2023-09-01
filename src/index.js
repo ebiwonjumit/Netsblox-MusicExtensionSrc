@@ -390,7 +390,7 @@ import {WebAudioAPI} from "./WebAudioAPI/build/lib/webAudioAPI";
                         } else {
                             const effectName = EffectsPreset[effect][0];
                             this.runAsyncFn(async () => {
-                                await window.audioAPI.removeTrackEffect(trackName, effectName)
+                                await audioAPI.removeTrackEffect(trackName, effectName)
                             });
                         }
                     } else {
