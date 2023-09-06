@@ -4463,6 +4463,7 @@
                   oldStopAllActiveSounds.call(this);
                   stopAudio();
               };
+              this.ide.hideCategory("sound");
 
           }
 
