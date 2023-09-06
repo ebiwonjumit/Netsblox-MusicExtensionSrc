@@ -272,7 +272,7 @@ import {WebAudioAPI} from "./WebAudioAPI/build/lib/webAudioAPI";
                 oldStopAllActiveSounds.call(this);
                 stopAudio();
             }
-
+            this.ide.hideCategory("sound");
         }
 
 
