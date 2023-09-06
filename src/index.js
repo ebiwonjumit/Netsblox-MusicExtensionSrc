@@ -4,7 +4,7 @@ import {WebAudioAPI} from "./WebAudioAPI/build/lib/webAudioAPI";
    const audioAPI = new WebAudioAPI();
    const I32_MAX = 2147483647;
    let syncStart = 0;
-   let midiDevices = [], midiInstruments = [], audioDevices = [];
+   let midiDevices = ['---MIDI---'], midiInstruments = [], audioDevices = ['---AUDIO---'];
    let lastRecordedClip = null, recordingInProgress = false, currentDeviceType;
    audioAPI.createTrack('default');
    audioAPI.start();
@@ -70,7 +70,7 @@ import {WebAudioAPI} from "./WebAudioAPI/build/lib/webAudioAPI";
      * @param {[String]} devices - available MIDI device.
      */
     function returnMidiDevice(devices) {
-        midiDevices = devices;
+        midiDevices = midiDevices.concat(devices);
         console.log(devices);
     }
 
@@ -79,7 +79,7 @@ import {WebAudioAPI} from "./WebAudioAPI/build/lib/webAudioAPI";
      * @param {[String]} devices - available audio-input devices.
      */
     function returnAudioDevice(devices) {
-        audioDevices = devices;
+        audioDevices = audioDevices.concat(devices);
         console.log(devices);
     }
 
@@ -311,7 +311,7 @@ import {WebAudioAPI} from "./WebAudioAPI/build/lib/webAudioAPI";
                 new Extension.Palette.Block('startRecording'),
                 new Extension.Palette.Block('recordForDuration'),
                 new Extension.Palette.Block('stopRecording'),
-                new Extension.Palette.Block('exportAudio'),
+                //new Extension.Palette.Block('exportAudio'),
                 new Extension.Palette.Block('playNote'),
                 new Extension.Palette.Block('getLastRecordedClip'),
             ];
@@ -399,14 +399,15 @@ import {WebAudioAPI} from "./WebAudioAPI/build/lib/webAudioAPI";
                 }),
                 block('setInputDevice', 'command', 'music', 'set input device: %inputDevice', [''], function (device) {
                     const trackName = this.receiver.id;
+                    const isDeviceHeader = (device === '---MIDI---' || device === '---AUDIO---');
 
                     if (device === '') 
                         this.runAsyncFn(async () => {
                             disconnectDevices(trackName);
                         }, { args: [], timeout: I32_MAX });
-                    else if (midiDevices.indexOf(device) != -1)
+                    else if (midiDevices.indexOf(device) != -1 && !isDeviceHeader)
                         midiConnect(trackName, device);
-                    else if (audioDevices.indexOf(device != -1))
+                    else if (audioDevices.indexOf(device != -1) && !isDeviceHeader)
                         audioConnect(trackName, device);
                     else
                         throw Error('device not found');
@@ -460,11 +461,11 @@ import {WebAudioAPI} from "./WebAudioAPI/build/lib/webAudioAPI";
                     }, { args: [], timeout: I32_MAX });
                     recordingInProgress = false;
                 }),
-                block('exportAudio', 'command', 'music', 'bounce %s as %fileFormats', ['clip'], function (clip, format) {
-                    this.runAsyncFn(async () => {
-                        await exportClip(clip, format);
-                    }, { args: [], timeout: I32_MAX });
-                }),
+                // block('exportAudio', 'command', 'music', 'export %s as %fileFormats', ['clip'], function (clip, format) {
+                //     this.runAsyncFn(async () => {
+                //         await exportClip(clip, format);
+                //     }, { args: [], timeout: I32_MAX });
+                // }),
                 block('getLastRecordedClip', 'reporter', 'music', 'get last recorded clip', [], function () {
                     if (recordingInProgress)
                         throw Error('recording in progress');
