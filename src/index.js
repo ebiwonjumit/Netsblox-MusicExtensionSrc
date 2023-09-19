@@ -4,7 +4,7 @@ import {WebAudioAPI} from "./WebAudioAPI/build/lib/webAudioAPI";
    const audioAPI = new WebAudioAPI();
    const I32_MAX = 2147483647;
    let syncStart = 0;
-   let midiDevices = ['---MIDI---'], midiInstruments = [], audioDevices = ['---AUDIO---'];
+   let midiDevices = [], midiInstruments = [], audioDevices = [];
    let lastRecordedClip = null, recordingInProgress = false, currentDeviceType;
    audioAPI.createTrack('default');
    audioAPI.start();
@@ -70,9 +70,9 @@ import {WebAudioAPI} from "./WebAudioAPI/build/lib/webAudioAPI";
      * @param {[String]} devices - available MIDI device.
      */
     function returnMidiDevice(devices) {
-        midiDevices = midiDevices.concat(devices);
-        console.log(devices);
-    }
+        for (let i = 0; i < devices.length; ++i) 
+            midiDevices.push(devices[i] + "---(midi)");
+    }  
 
     /**
      * Creates a list of all available audio-input devices
@@ -97,7 +97,8 @@ import {WebAudioAPI} from "./WebAudioAPI/build/lib/webAudioAPI";
      */
     function midiConnect(trackName, device) {
         if (device != "") {
-            audioAPI.connectMidiDeviceToTrack(trackName, device).then(() => {
+            const mDevice = device.replace("---(midi)", "");
+            audioAPI.connectMidiDeviceToTrack(trackName, mDevice).then(() => {
                 console.log('Connected to MIDI device!');
             });
             // audioAPI.registerMidiDeviceCallback(device, midiCallback);
@@ -398,15 +399,14 @@ import {WebAudioAPI} from "./WebAudioAPI/build/lib/webAudioAPI";
                 }),
                 block('setInputDevice', 'command', 'music', 'set input device: %inputDevice', [''], function (device) {
                     const trackName = this.receiver.id;
-                    const isDeviceHeader = (device === '---MIDI---' || device === '---AUDIO---');
 
                     if (device === '') 
                         this.runAsyncFn(async () => {
                             disconnectDevices(trackName);
                         }, { args: [], timeout: I32_MAX });
-                    else if (midiDevices.indexOf(device) != -1 && !isDeviceHeader)
+                    else if (midiDevices.indexOf(device) != -1)
                         midiConnect(trackName, device);
-                    else if (audioDevices.indexOf(device != -1) && !isDeviceHeader)
+                    else if (audioDevices.indexOf(device != -1))
                         audioConnect(trackName, device);
                     else
                         throw Error('device not found');
