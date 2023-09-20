@@ -4451,7 +4451,6 @@
                   stopAudio();
               };
               this.ide.hideCategory("sound");
-
           }
 
 
@@ -4697,13 +4696,13 @@
                   null, //text
                   false, //numeric
                   identityMap(Object.keys(availableMidiNotes)),
-                  true, //readonly (no arbitrary text)
+                  false, //readonly (no arbitrary text)
               )),
               new Extension.LabelPart('noteDurations', () => new InputSlotMorph(
                   null, //text
                   false, //numeric
                   identityMap(Object.keys(availableNoteDurations)),
-                  true, //readonly (no arbitrary text)
+                  false, //readonly (no arbitrary text)
               )),
               new Extension.LabelPart('fxPreset', () => new InputSlotMorph(
                   null, // text
