@@ -4494,6 +4494,7 @@
                    new Extension.Palette.Block('playMidi'),
                    new Extension.Palette.Block('scales'),
                    new Extension.Palette.Block('chords'),
+                   new Extension.Palette.Block('midiNote'),
                    new Extension.Palette.Block('getLastRecordedClip'),
                ];
                return [
@@ -4536,10 +4537,13 @@
                        stopAudio();
                        this.doStopAll();
                    }),
-                   block('scales', 'reporter', 'music', 'create a scale root note %rootNotes accidental %accidentals octaves %n', [], function (){
-                  
+                   block('midiNote', 'reporter', 'music', 'midi note %midiNote', [], function (note){
+                      return availableMidiNotes[note];
+
+                  }),
+                   block('scales', 'reporter', 'music', 'create a scale root note %s', [], function (){
                  }),
-                 block('chords', 'reporter', 'music', 'create chords root note %rootNotes accidental %accidentals type %chordTypes', [], function (){
+                 block('chords', 'reporter', 'music', 'create chords root note %s', [], function (){
               }),
                    block('masterVolume', 'command', 'music', 'master volume %n %', ['80'], function (percent){
                        masterVolume(percent * 0.01);
@@ -4710,6 +4714,98 @@
                    identityMap(Object.keys(availableMidiNotes)),
                    false, //readonly (no arbitrary text)
                )),
+               new Extension.LabelPart('midiNote', () => new InputSlotMorph(
+                  null, //text
+                  false, //numeric
+                  {
+                      'C':{
+                          'C0': identityMap(['C0','C0s','C0b']),
+                          'C1': identityMap(['C1','C1s','C1b']),
+                          'C2': identityMap(['C2','C2s','C2b']),
+                          'C3': identityMap(['C3','C3s','C3b']),
+                          'C4': identityMap(['C4','C4s','C4b']),
+                          'C5': identityMap(['C5','C5s','C5b']),
+                          'C6': identityMap(['C6','C6s','C6b']),
+                          'C7': identityMap(['C7','C7s','C7b']),
+                          'C8': identityMap(['C8','C8s','C8b']),
+                          'C9': identityMap(['C9','C9s','C9b']),
+                      },
+                      'D':{
+                          'D0': identityMap(['D0','D0s','D0b']),
+                          'D1': identityMap(['D1','D1s','D1b']),
+                          'D2': identityMap(['D2','D2s','D2b']),
+                          'D3': identityMap(['D3','D3s','D3b']),
+                          'D4': identityMap(['D4','D4s','D4b']),
+                          'D5': identityMap(['D5','D5s','D5b']),
+                          'D6': identityMap(['D6','D6s','D6b']),
+                          'D7': identityMap(['D7','D7s','D7b']),
+                          'D8': identityMap(['D8','D8s','D8b']),
+                          'D9': identityMap(['D9','D9s','D9b']),
+                      },
+                      'E':{
+                          'E0': identityMap(['E0','E0s','E0b']),
+                          'E1': identityMap(['E1','E1s','E1b']),
+                          'E2': identityMap(['E2','E2s','E2b']),
+                          'E3': identityMap(['E3','E3s','E3b']),
+                          'E4': identityMap(['E4','E4s','E4b']),
+                          'E5': identityMap(['E5','E5s','E5b']),
+                          'E6': identityMap(['E6','E6s','E6b']),
+                          'E7': identityMap(['E7','E7s','E7b']),
+                          'E8': identityMap(['E8','E8s','E8b']),
+                          'E9': identityMap(['E9','E9s','E9b']),
+                      },
+                      'F':{
+                          'F0': identityMap(['F0','F0s','F0b']),
+                          'F1': identityMap(['F1','F1s','F1b']),
+                          'F2': identityMap(['F2','F2s','F2b']),
+                          'F3': identityMap(['F3','F3s','F3b']),
+                          'F4': identityMap(['F4','F4s','F4b']),
+                          'F5': identityMap(['F5','F5s','F5b']),
+                          'F6': identityMap(['F6','F6s','F6b']),
+                          'F7': identityMap(['F7','F7s','F7b']),
+                          'F8': identityMap(['F8','F8s','F8b']),
+                          'F9': identityMap(['F9','F9s','F9b']),
+                      },
+                      'G':{
+                          'G0': identityMap(['G0','G0s','G0b']),
+                          'G1': identityMap(['G1','G1s','G1b']),
+                          'G2': identityMap(['G2','G2s','G2b']),
+                          'G3': identityMap(['G3','G3s','G3b']),
+                          'G4': identityMap(['G4','G4s','G4b']),
+                          'G5': identityMap(['G5','G5s','G5b']),
+                          'G6': identityMap(['G6','G6s','G6b']),
+                          'G7': identityMap(['G7','G7s','G7b']),
+                          'G8': identityMap(['G8','G8s','G8b']),
+                          'G9': identityMap(['G9','G9s','G9b']),
+                      },
+                      'A':{
+                          'A0': identityMap(['A0','A0s','A0b']),
+                          'A1': identityMap(['A1','A1s','A1b']),
+                          'A2': identityMap(['A2','A2s','A2b']),
+                          'A3': identityMap(['A3','A3s','A3b']),
+                          'A4': identityMap(['A4','A4s','A4b']),
+                          'A5': identityMap(['A5','A5s','A5b']),
+                          'A6': identityMap(['A6','A6s','A6b']),
+                          'A7': identityMap(['A7','A7s','A7b']),
+                          'A8': identityMap(['A8','A8s','A8b']),
+                          'A9': identityMap(['A9','A9s','A9b']),
+                      },
+                      'B':{
+                          'B0': identityMap(['B0','B0s','B0b']),
+                          'B1': identityMap(['B1','B1s','B1b']),
+                          'B2': identityMap(['B2','B2s','B2b']),
+                          'B3': identityMap(['B3','B3s','B3b']),
+                          'B4': identityMap(['B4','B4s','B4b']),
+                          'B5': identityMap(['B5','B5s','B5b']),
+                          'B6': identityMap(['B6','B6s','B6b']),
+                          'B7': identityMap(['B7','B7s','B7b']),
+                          'B8': identityMap(['B8','B8s','B8b']),
+                          'B9': identityMap(['B9','B9s','B9b']),
+                      },
+
+                  },
+                  true, //readonly (no arbitrary text)
+              )),
                new Extension.LabelPart('noteDurations', () => new InputSlotMorph(
                    null, //text
                    false, //numeric
@@ -4728,12 +4824,12 @@
                identityMap(['C', 'D', 'E', 'F', 'G', 'A', 'B']),
                true, //readonly (no arbitrary text)
            )),
-           new Extension.LabelPart('accidentals', () => new InputSlotMorph(
-            null, //text
-            false, //numeric
-            identityMap(['sharp', 'flat']),
-            true, //readonly (no arbitrary text)
-        )),
+               new Extension.LabelPart('accidentals', () => new InputSlotMorph(
+                   null, //text
+                  false, //numeric
+                   identityMap(['sharp', 'flat']),
+                  true, //readonly (no arbitrary text)
+                  )),
                new Extension.LabelPart('fxPreset', () => new InputSlotMorph(
                    null, // text
                    false, //numeric
