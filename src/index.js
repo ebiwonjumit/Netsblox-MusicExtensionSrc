@@ -188,6 +188,36 @@ import {WebAudioAPI} from "./WebAudioAPI/build/lib/webAudioAPI";
          return audioAPI.playClip(trackName, buffer,audioAPI.getCurrentTime(),  dur);
      }
 
+     async function playChord(trackName, listOfNotes){
+        if(listOfNotes.length == 3){
+            const note1 = listOfNotes[0];
+            const note2 = listOfNotes[1];
+            const note3 = listOfNotes[2]
+            audioAPI.playNote(trackName,note1,audioAPI.getCurrentTime(),4.0);
+            audioAPI.playNote(trackName,note2,audioAPI.getCurrentTime(),4.0);
+            audioAPI.playNote(trackName,note3,audioAPI.getCurrentTime(),4.0);
+        }
+        else if(listOfNotes.length == 4){
+            const note1 = listOfNotes[0];
+            const note2 = listOfNotes[1];
+            const note3 = listOfNotes[2];
+            const note4 = listOfNotes[3];
+            audioAPI.playNote(trackName,note1,audioAPI.getCurrentTime(),4.0);
+            audioAPI.playNote(trackName,note2,audioAPI.getCurrentTime(),4.0);
+            audioAPI.playNote(trackName,note3,audioAPI.getCurrentTime(),4.0);
+            audioAPI.playNote(trackName,note4,audioAPI.getCurrentTime(),4.0);
+        }
+     }
+
+     async function playScale(trackName, listOfNotes){
+        console.log(listOfNotes);
+        for (let i = 0; i < listOfNotes.length; i++){
+            let noteDuration = await audioAPI.playNote(trackName,listOfNotes[i],audioAPI.getCurrentTime(),2.0);
+            console.log(listOfNotes[i]);
+            setTimeout(playScale,noteDuration);
+        }
+     }
+
      async function setTrackPanning(trackName, level){
          const effectOptions = { ["leftToRightRatio"]:Number(level)};
          // await audioAPI.applyTrackEffect(trackName,"Panning",availableEffects["Panning"]);
@@ -328,8 +358,22 @@ import {WebAudioAPI} from "./WebAudioAPI/build/lib/webAudioAPI";
                          await wait(blockduration);
                      },{ args: [], timeout: I32_MAX });
                  }),
-                 block('playMidi', 'command', 'music', 'play midi %s', [''], function (input){
+                 block('playMidi', 'command', 'music', 'play midi note(s) %s', [''], function (input){
                    this.runAsyncFn(async () =>{
+                    const trackName = this.receiver.id;
+                    if(input.contents.length === 1){
+                        const blockDuration = await audioAPI.playNote(trackName,input.contents[0], audioAPI.getCurrentTime(),8.0);
+                        await wait(blockDuration);
+                    }
+                    else if(input.contents.length <= 4 && input.contents.length > 1){
+                        const duration = await playChord(trackName, input.contents);
+                        await wait(duration);
+                    }
+                    else if(input.contents.length > 5){
+                        const duration = await playScale(trackName, input.contents);
+                        await wait(duration);
+                    }
+
                    },{ args: [], timeout: I32_MAX });
                }),
                  block('stopClips', 'command', 'music', 'stop all clips', [], function (){
