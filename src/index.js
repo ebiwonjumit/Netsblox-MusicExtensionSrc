@@ -337,12 +337,106 @@ import {WebAudioAPI} from "./WebAudioAPI/build/lib/webAudioAPI";
                      this.doStopAll();
                  }),
                  block('midiNote', 'reporter', 'music', 'midi note %midiNote', [], function (note){
+
+                    if(note.includes('s')){
+                        const startingNote = note.split('s')[0];
+                        var startingMidiNumber = availableMidiNotes[startingNote];
+                        const reg = new RegExp('s', 'g');
+                        const offsetSharp = (note.match(reg)|| []).length
+                        return startingMidiNumber + offsetSharp;
+                    }
+                    else if (note.includes('b')){
+                        const startingNote = note.split('b')[0];
+                        var startingMidiNumber = availableMidiNotes[startingNote];
+                        const reg = new RegExp('b', 'g');
+                        const offsetFlat = (note.match(reg)|| []).length
+                        return startingMidiNumber + offsetFlat;
+                    }
                     return availableMidiNotes[note];
 
                 }),
-                 block('scales', 'reporter', 'music', 'create a scale root note %s', [], function (){
+                 block('scales', 'reporter', 'music', 'create a scale root note %n type %scaleTypes', ['', 'Major'], function (rootNote, type){
+                    if(type === "Major"){
+                        const majorScale = [0,2,4,5,7,9,11,12];
+                        majorScale.forEach((element,index) => {
+                            majorScale[index] = element + rootNote;
+                        })
+
+                        return new List(majorScale);
+                    }
+                    else if (type === "Minor"){
+                        const minorScale = [0,2,3,5,7,8,10,12];
+                        minorScale.forEach((element,index) => {
+                            minorScale[index] = element + rootNote;
+                        })
+                        return new List(minorScale);
+                    }
+                    else{
+                        return 'Please select a valid scale type';
+                    }
+
                }),
-               block('chords', 'reporter', 'music', 'create chords root note %s', [], function (){
+               block('chords', 'reporter', 'music', 'create a chord root note %n type %chordTypes', ['','Major'], function (rootNote, type){
+                if(type === "Major"){
+                    const majorChord = [0,4,7];
+                    majorChord.forEach((element,index) => {
+                        majorChord[index] = element + rootNote;
+                    })
+
+                    return new List(majorChord);
+                }
+                else if (type === "Minor"){
+                    const minorChord = [0,3,7];
+                    minorChord.forEach((element,index) => {
+                        minorChord[index] = element + rootNote;
+                    })
+                    return new List(minorChord);
+                }
+                else if (type === "Diminished"){
+                    const dimChord = [0,3,6];
+                    dimChord.forEach((element,index) => {
+                        dimChord[index] = element + rootNote;
+                    })
+                    return new List(dimChord);
+                }
+                else if (type === "Augmented"){
+                    const augChord = [0,4,8];
+                    augChord.forEach((element,index) => {
+                        augChord[index] = element + rootNote;
+                    })
+                    return new List(augChord);
+                }
+                else if (type === "Major 7th"){
+                    const major7Chord = [0,4,7,11];
+                    major7Chord.forEach((element,index) => {
+                        major7Chord[index] = element + rootNote;
+                    })
+                    return new List(major7Chord);
+                }
+                else if (type === "Dominant 7th"){
+                    const dom7Chord = [0,4,7,10];
+                    dom7Chord.forEach((element,index) => {
+                        dom7Chord[index] = element + rootNote;
+                    })
+                    return new List(dom7Chord);
+                }
+                else if (type === "Minor 7th"){
+                    const minor7Chord = [0,3,7,10];
+                    minor7Chord.forEach((element,index) => {
+                        minor7Chord[index] = element + rootNote;
+                    })
+                    return new List(minor7Chord);
+                }
+                else if (type === "Diminished 7th"){
+                    const diminished7Chord = [0,3,6,9];
+                    diminished7Chord.forEach((element,index) => {
+                        diminished7Chord[index] = element + rootNote;
+                    })
+                    return new List(diminished7Chord);
+                }
+                else{
+                    return 'Please select a valid chord type';
+                }
             }),
                  block('masterVolume', 'command', 'music', 'master volume %n %', ['80'], function (percent){
                      masterVolume(percent * 0.01);
@@ -518,88 +612,88 @@ import {WebAudioAPI} from "./WebAudioAPI/build/lib/webAudioAPI";
                 false, //numeric
                 {
                     'C':{
-                        'C0': identityMap(['C0','C0s','C0b']),
-                        'C1': identityMap(['C1','C1s','C1b']),
-                        'C2': identityMap(['C2','C2s','C2b']),
-                        'C3': identityMap(['C3','C3s','C3b']),
-                        'C4': identityMap(['C4','C4s','C4b']),
-                        'C5': identityMap(['C5','C5s','C5b']),
-                        'C6': identityMap(['C6','C6s','C6b']),
-                        'C7': identityMap(['C7','C7s','C7b']),
-                        'C8': identityMap(['C8','C8s','C8b']),
-                        'C9': identityMap(['C9','C9s','C9b']),
+                        '0': identityMap(['C0','C0s','C0b']),
+                        '1': identityMap(['C1','C1s','C1b']),
+                        '2': identityMap(['C2','C2s','C2b']),
+                        '3': identityMap(['C3','C3s','C3b']),
+                        '4': identityMap(['C4','C4s','C4b']),
+                        '5': identityMap(['C5','C5s','C5b']),
+                        '6': identityMap(['C6','C6s','C6b']),
+                        '7': identityMap(['C7','C7s','C7b']),
+                        '8': identityMap(['C8','C8s','C8b']),
+                        '9': identityMap(['C9','C9s','C9b']),
                     },
                     'D':{
-                        'D0': identityMap(['D0','D0s','D0b']),
-                        'D1': identityMap(['D1','D1s','D1b']),
-                        'D2': identityMap(['D2','D2s','D2b']),
-                        'D3': identityMap(['D3','D3s','D3b']),
-                        'D4': identityMap(['D4','D4s','D4b']),
-                        'D5': identityMap(['D5','D5s','D5b']),
-                        'D6': identityMap(['D6','D6s','D6b']),
-                        'D7': identityMap(['D7','D7s','D7b']),
-                        'D8': identityMap(['D8','D8s','D8b']),
-                        'D9': identityMap(['D9','D9s','D9b']),
+                        '0': identityMap(['D0','D0s','D0b']),
+                        '1': identityMap(['D1','D1s','D1b']),
+                        '2': identityMap(['D2','D2s','D2b']),
+                        '3': identityMap(['D3','D3s','D3b']),
+                        '4': identityMap(['D4','D4s','D4b']),
+                        '5': identityMap(['D5','D5s','D5b']),
+                        '6': identityMap(['D6','D6s','D6b']),
+                        '7': identityMap(['D7','D7s','D7b']),
+                        '8': identityMap(['D8','D8s','D8b']),
+                        '9': identityMap(['D9','D9s','D9b']),
                     },
                     'E':{
-                        'E0': identityMap(['E0','E0s','E0b']),
-                        'E1': identityMap(['E1','E1s','E1b']),
-                        'E2': identityMap(['E2','E2s','E2b']),
-                        'E3': identityMap(['E3','E3s','E3b']),
-                        'E4': identityMap(['E4','E4s','E4b']),
-                        'E5': identityMap(['E5','E5s','E5b']),
-                        'E6': identityMap(['E6','E6s','E6b']),
-                        'E7': identityMap(['E7','E7s','E7b']),
-                        'E8': identityMap(['E8','E8s','E8b']),
-                        'E9': identityMap(['E9','E9s','E9b']),
+                        '0': identityMap(['E0','E0s','E0b']),
+                        '1': identityMap(['E1','E1s','E1b']),
+                        '2': identityMap(['E2','E2s','E2b']),
+                        '3': identityMap(['E3','E3s','E3b']),
+                        '4': identityMap(['E4','E4s','E4b']),
+                        '5': identityMap(['E5','E5s','E5b']),
+                        '6': identityMap(['E6','E6s','E6b']),
+                        '7': identityMap(['E7','E7s','E7b']),
+                        '8': identityMap(['E8','E8s','E8b']),
+                        '9': identityMap(['E9','E9s','E9b']),
                     },
                     'F':{
-                        'F0': identityMap(['F0','F0s','F0b']),
-                        'F1': identityMap(['F1','F1s','F1b']),
-                        'F2': identityMap(['F2','F2s','F2b']),
-                        'F3': identityMap(['F3','F3s','F3b']),
-                        'F4': identityMap(['F4','F4s','F4b']),
-                        'F5': identityMap(['F5','F5s','F5b']),
-                        'F6': identityMap(['F6','F6s','F6b']),
-                        'F7': identityMap(['F7','F7s','F7b']),
-                        'F8': identityMap(['F8','F8s','F8b']),
-                        'F9': identityMap(['F9','F9s','F9b']),
+                        '0': identityMap(['F0','F0s','F0b']),
+                        '1': identityMap(['F1','F1s','F1b']),
+                        '2': identityMap(['F2','F2s','F2b']),
+                        '3': identityMap(['F3','F3s','F3b']),
+                        '4': identityMap(['F4','F4s','F4b']),
+                        '5': identityMap(['F5','F5s','F5b']),
+                        '6': identityMap(['F6','F6s','F6b']),
+                        '7': identityMap(['F7','F7s','F7b']),
+                        '8': identityMap(['F8','F8s','F8b']),
+                        '9': identityMap(['F9','F9s','F9b']),
                     },
                     'G':{
-                        'G0': identityMap(['G0','G0s','G0b']),
-                        'G1': identityMap(['G1','G1s','G1b']),
-                        'G2': identityMap(['G2','G2s','G2b']),
-                        'G3': identityMap(['G3','G3s','G3b']),
-                        'G4': identityMap(['G4','G4s','G4b']),
-                        'G5': identityMap(['G5','G5s','G5b']),
-                        'G6': identityMap(['G6','G6s','G6b']),
-                        'G7': identityMap(['G7','G7s','G7b']),
-                        'G8': identityMap(['G8','G8s','G8b']),
-                        'G9': identityMap(['G9','G9s','G9b']),
+                        '0': identityMap(['G0','G0s','G0b']),
+                        '1': identityMap(['G1','G1s','G1b']),
+                        '2': identityMap(['G2','G2s','G2b']),
+                        '3': identityMap(['G3','G3s','G3b']),
+                        '4': identityMap(['G4','G4s','G4b']),
+                        '5': identityMap(['G5','G5s','G5b']),
+                        '6': identityMap(['G6','G6s','G6b']),
+                        '7': identityMap(['G7','G7s','G7b']),
+                        '8': identityMap(['G8','G8s','G8b']),
+                        '9': identityMap(['G9','G9s','G9b']),
                     },
                     'A':{
-                        'A0': identityMap(['A0','A0s','A0b']),
-                        'A1': identityMap(['A1','A1s','A1b']),
-                        'A2': identityMap(['A2','A2s','A2b']),
-                        'A3': identityMap(['A3','A3s','A3b']),
-                        'A4': identityMap(['A4','A4s','A4b']),
-                        'A5': identityMap(['A5','A5s','A5b']),
-                        'A6': identityMap(['A6','A6s','A6b']),
-                        'A7': identityMap(['A7','A7s','A7b']),
-                        'A8': identityMap(['A8','A8s','A8b']),
-                        'A9': identityMap(['A9','A9s','A9b']),
+                        '0': identityMap(['A0','A0s','A0b']),
+                        '1': identityMap(['A1','A1s','A1b']),
+                        '2': identityMap(['A2','A2s','A2b']),
+                        '3': identityMap(['A3','A3s','A3b']),
+                        '4': identityMap(['A4','A4s','A4b']),
+                        '5': identityMap(['A5','A5s','A5b']),
+                        '6': identityMap(['A6','A6s','A6b']),
+                        '7': identityMap(['A7','A7s','A7b']),
+                        '8': identityMap(['A8','A8s','A8b']),
+                        '9': identityMap(['A9','A9s','A9b']),
                     },
                     'B':{
-                        'B0': identityMap(['B0','B0s','B0b']),
-                        'B1': identityMap(['B1','B1s','B1b']),
-                        'B2': identityMap(['B2','B2s','B2b']),
-                        'B3': identityMap(['B3','B3s','B3b']),
-                        'B4': identityMap(['B4','B4s','B4b']),
-                        'B5': identityMap(['B5','B5s','B5b']),
-                        'B6': identityMap(['B6','B6s','B6b']),
-                        'B7': identityMap(['B7','B7s','B7b']),
-                        'B8': identityMap(['B8','B8s','B8b']),
-                        'B9': identityMap(['B9','B9s','B9b']),
+                        '0': identityMap(['B0','B0s','B0b']),
+                        '1': identityMap(['B1','B1s','B1b']),
+                        '2': identityMap(['B2','B2s','B2b']),
+                        '3': identityMap(['B3','B3s','B3b']),
+                        '4': identityMap(['B4','B4s','B4b']),
+                        '5': identityMap(['B5','B5s','B5b']),
+                        '6': identityMap(['B6','B6s','B6b']),
+                        '7': identityMap(['B7','B7s','B7b']),
+                        '8': identityMap(['B8','B8s','B8b']),
+                        '9': identityMap(['B9','B9s','B9b']),
                     },
 
                 },
@@ -614,7 +708,13 @@ import {WebAudioAPI} from "./WebAudioAPI/build/lib/webAudioAPI";
              new Extension.LabelPart('chordTypes', () => new InputSlotMorph(
                 null, //text
                 false, //numeric
-                identityMap(['Major', 'Minor', 'Diminished', 'Augmented', 'Dominant 7th']),
+                identityMap(['Major', 'Minor', 'Diminished', 'Augmented', 'Major 7th', 'Dominant 7th', 'Minor 7th', 'Diminished 7th']),
+                true, //readonly (no arbitrary text)
+            )),
+            new Extension.LabelPart('scaleTypes', () => new InputSlotMorph(
+                null, //text
+                false, //numeric
+                identityMap(['Major', 'Minor']),
                 true, //readonly (no arbitrary text)
             )),
             new Extension.LabelPart('rootNotes', () => new InputSlotMorph(
@@ -686,4 +786,3 @@ import {WebAudioAPI} from "./WebAudioAPI/build/lib/webAudioAPI";
 
      NetsBloxExtensions.register(MusicApp);
  })();
-
