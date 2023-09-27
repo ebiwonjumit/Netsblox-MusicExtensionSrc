@@ -589,14 +589,6 @@ import {WebAudioAPI} from "./webAudioAPI";
                     }
                     recordingInProgress = true;
                 }),
-                block('startRecording', 'command', 'music', 'start recording master', [], function () {
-                    lastRecordedClip = audioAPI.recordOutput();
-                    recordingInProgress = true;
-                }),
-                block('recordForDuration', 'command', 'music', 'record master for %n seconds', [0], function (time) {
-                    lastRecordedClip = audioAPI.recordOutput(null, null, time);
-                    recordingInProgress = true;
-                }),
                 block('setInstrument', 'command', 'music', 'set instrument %webMidiInstrument', ['Grand Piano'], function(instrument) {
                     const trackName = this.receiver.id;
                     this.runAsyncFn(async () => {
