@@ -326,8 +326,8 @@ import {WebAudioAPI} from "./WebAudioAPI/build/lib/webAudioAPI";
                  new Extension.Palette.Block('presetEffect'),
                  new Extension.Palette.Block('setInputDevice'),
                  new Extension.Palette.Block('setInstrument'),
-                 new Extension.Palette.Block('startRecording'),
-                 new Extension.Palette.Block('recordForDuration'),
+                 new Extension.Palette.Block('startRecordingInput'),
+                 new Extension.Palette.Block('recordInputForDuration'),
                  new Extension.Palette.Block('stopRecording'),
                  //new Extension.Palette.Block('exportAudio'),
                  new Extension.Palette.Block('playNote'),
@@ -577,7 +577,7 @@ import {WebAudioAPI} from "./WebAudioAPI/build/lib/webAudioAPI";
                      else
                          console.log('no default instruments');
                  }),
-                 block('startRecording', 'command', 'music', 'start recording', [], function () {
+                 block('startRecordingInput', 'command', 'music', 'start recording input', [], function () {
                      const trackName = this.receiver.id;
                      switch (currentDeviceType) {
                          case 'midi':
@@ -593,7 +593,7 @@ import {WebAudioAPI} from "./WebAudioAPI/build/lib/webAudioAPI";
                      }
                      recordingInProgress = true;
                  }),
-                 block('recordForDuration', 'command', 'music', 'record for %n seconds', [0], function (time) {
+                 block('recordInputForDuration', 'command', 'music', 'record input for %n seconds', [0], function (time) {
                      const trackName = this.receiver.id;
                      switch (currentDeviceType) {
                          case 'midi':
@@ -609,6 +609,14 @@ import {WebAudioAPI} from "./WebAudioAPI/build/lib/webAudioAPI";
                      }
                      recordingInProgress = true;
                  }),
+                 block('startRecording', 'command', 'music', 'start recording master', [], function () {
+                    lastRecordedClip = audioAPI.recordOutput();
+                    recordingInProgress = true;
+                }),
+                block('recordForDuration', 'command', 'music', 'record master for %n seconds', [0], function (time) {
+                    lastRecordedClip = audioAPI.recordOutput(null, null, time);
+                    recordingInProgress = true;
+                }),
                  block('setInstrument', 'command', 'music', 'set instrument %webMidiInstrument', ['Grand Piano'], function(instrument) {
                      const trackName = this.receiver.id;
                      changeInsturment(trackName,instrument);
