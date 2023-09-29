@@ -5493,7 +5493,7 @@
         const audioAPI = new WebAudioAPI();
         const I32_MAX = 2147483647;
         let syncStart = 0;
-        let midiDevices = ['---MIDI---'], midiInstruments = [], audioDevices = ['---AUDIO---'];
+        let midiDevices = [], midiInstruments = [], audioDevices = [];
         let lastRecordedClip = null, recordingInProgress = false, currentDeviceType;
         audioAPI.createTrack('default');
         audioAPI.start();
@@ -5507,11 +5507,11 @@
         const releaseRoot = 'https://extensions.netsblox.org/extensions/BeatsBlox/instruments/';
         const instrumentLocation = window.origin.includes('localhost') ? devRoot : releaseRoot;
 
-         audioAPI.getAvailableInstruments(instrumentLocation).then(
-             instruments => instruments.forEach(
-                 instrument => midiInstruments.push(instrument)
-             )
-         );
+        audioAPI.getAvailableInstruments(instrumentLocation).then(
+            instruments => instruments.forEach(
+                instrument => midiInstruments.push(instrument)
+            )
+        );
 
        
          /**
@@ -5536,23 +5536,23 @@
              LowPassFilter: 51, HighPassFilter: 52, BandPassFilter: 53, BandRejectFilter: 54  // Filter Effects
          };
 
-         const EffectsPreset = {
-             'Under Water': ['LowPassFilter', {
-                 ['cutoffFrequency']: 500,
-                 ['resonance']: 12,
+        const EffectsPreset = {
+            'Under Water': ['LowPassFilter', {
+                ['cutoffFrequency']: 500,
+                ['resonance']: 12,
              }],
-             'Telephone': ['HighPassFilter', {
-                 ['cutoffFrequency'] : 1800,
-                 ['resonance']: 10,
-             }],
-             'Cave': ['Echo', {
-                 ['feedback'] : 0.5,
-                 ['intensity'] : 0.4,
-             }],
-             'Fan Blade': ['Tremolo', {
-                 ['tremeloFrequency'] : 18,
-             }],
-         };
+            'Telephone': ['HighPassFilter', {
+                ['cutoffFrequency'] : 1800,
+                ['resonance']: 10,
+            }],
+            'Cave': ['Echo', {
+                ['feedback'] : 0.5,
+                ['intensity'] : 0.4,
+            }],
+            'Fan Blade': ['Tremolo', {
+                ['tremeloFrequency'] : 18,
+            }],
+        };
 
         /**
          * Creates a list of all available MIDI devices
@@ -5563,21 +5563,21 @@
                 midiDevices.push(devices[i] + "---(midi)");
         }  
 
-         /**
-          * Creates a list of all available audio-input devices
-          * @param {[String]} devices - available audio-input devices.
-          */
-         function returnAudioDevice(devices) {
-             audioDevices = audioDevices.concat(devices);
-             console.log(devices);
-         }
+        /**
+         * Creates a list of all available audio-input devices
+         * @param {[String]} devices - available audio-input devices.
+         */
+        function returnAudioDevice(devices) {
+            audioDevices = audioDevices.concat(devices);
+            console.log(devices);
+        }
 
-         /**
-          * Runs when the audio API can't return a list of available devices.
-          */
-         function fail() {
-             console.log('something went wrong');
-         }
+        /**
+         * Runs when the audio API can't return a list of available devices.
+         */
+        function fail() {
+            console.log('something went wrong');
+        }
 
         /**
          * Connects a MIDI device to the WebAudioAPI
@@ -5595,74 +5595,74 @@
             }
         }
 
-         /**
-          * Connects and audio input device to NetsBlox
-          * @param {String} trackName - Name of the Track 
-          * @param {String} device - Name of the audio device being connected.
-          */
-         function audioConnect(trackName,device) {
-             if (device != "") {
-                 audioAPI.connectAudioInputDeviceToTrack(trackName, device).then(() => {
-                     console.log('Connected to audio device!');
-                 });
-                 currentDeviceType = 'audio';
-             }
-         }
+        /**
+         * Connects and audio input device to NetsBlox
+         * @param {String} trackName - Name of the Track 
+         * @param {String} device - Name of the audio device being connected.
+         */
+        function audioConnect(trackName,device) {
+            if (device != "") {
+                audioAPI.connectAudioInputDeviceToTrack(trackName, device).then(() => {
+                    console.log('Connected to audio device!');
+                });
+                currentDeviceType = 'audio';
+            }
+        }
 
-         /**
-          * Connects an instrument sample to the WebAudioAPI
-          * @param {String} trackName - Name of the Track 
-          * @param {String} instrument - Name of instrument being loaded.
-          */
+        /**
+         * Connects an instrument sample to the WebAudioAPI
+         * @param {String} trackName - Name of the Track 
+         * @param {String} instrument - Name of instrument being loaded.
+         */
         async function changeInsturment(trackName,instrument) {
-             await audioAPI.updateInstrument(trackName, instrument).then(() => {
-                 console.log('Instrument loading complete!');
-             });
+            await audioAPI.updateInstrument(trackName, instrument).then(() => {
+                console.log('Instrument loading complete!');
+            });
+        }
+
+        /**
+         * Converts an AudioClip k to a Snap! Sound.
+         * @asyn
+         * @param {AudioClip} clip - The clip being rendered.
+         * @returns A Snap! Sound.
+         */
+        async function clipToSnap(clip) {
+            const blob = await clip.getEncodedData(EncodingType['WAV']);
+            const audio = new Audio(URL.createObjectURL(blob, { type: "audio/wav" }));
+            return new Sound(audio, 'netsblox-sound');
+        }
+
+        /**
+         * Disconnects all audio and midi devices from NetsBlox
+         * @param {String} trackName - name of the Track 
+         * @async
+         */
+        async function disconnectDevices(trackName) {
+            console.log('device disconnected');
+            if (audioDevices.length > 0)
+                await audioAPI.disconnectAudioInputDeviceFromTrack(trackName);
+            if (midiDevices.length > 0)
+               await audioAPI.disconnectMidiDeviceFromTrack(trackName);
+        }
+
+        function base64toArrayBuffer(base64){
+            var binaryString = window.atob(base64.replace("data:audio/mpeg;base64,", ""));
+            var bytes = new Uint8Array(binaryString.length);
+            for (var i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
          }
 
-         /**
-          * Converts an AudioClip k to a Snap! Sound.
-          * @asyn
-          * @param {AudioClip} clip - The clip being rendered.
-          * @returns A Snap! Sound.
-          */
-         async function clipToSnap(clip) {
-             const blob = await clip.getEncodedData(EncodingType['WAV']);
-             const audio = new Audio(URL.createObjectURL(blob, { type: "audio/wav" }));
-             return new Sound(audio, 'netsblox-sound');
-         }
-
-         /**
-          * Disconnects all audio and midi devices from NetsBlox
-          * @param {String} trackName - name of the Track 
-          * @async
-          */
-         async function disconnectDevices(trackName) {
-             console.log('device disconnected');
-             if (audioDevices.length > 0)
-                 await audioAPI.disconnectAudioInputDeviceFromTrack(trackName);
-             if (midiDevices.length > 0)
-                 await audioAPI.disconnectMidiDeviceFromTrack(trackName);
-         }
-
-         function base64toArrayBuffer(base64){
-             var binaryString = window.atob(base64.replace("data:audio/mpeg;base64,", ""));
-             var bytes = new Uint8Array(binaryString.length);
-             for (var i = 0; i < binaryString.length; i++) {
-                 bytes[i] = binaryString.charCodeAt(i);
-             }
-             return bytes.buffer;
-         }
-
-         async function synchronize(){
-             let currentStart = syncStart++;
-             await wait(.005);
-             do {
-                 currentStart++;
-                 await wait(.005);
-             } while (currentStart != syncStart);
-             audioAPI.start();
-         }
+        async function synchronize(){
+            let currentStart = syncStart++;
+            await wait(.005);
+            do {
+                currentStart++;
+                await wait(.005);
+            } while (currentStart != syncStart);
+            audioAPI.start();
+        }
 
         async function playAudio(binaryString, trackName){
             await synchronize();  
@@ -5675,16 +5675,16 @@
             return audioAPI.playClip(trackName, buffer, audioAPI.getCurrentTime(), 0);
         }
 
-         async function playAudioForDuration(binaryString, trackName, dur){
-             await synchronize();
-             let buffer;
-             if (binaryString.audio.src.includes('data:'))
-                  buffer = base64toArrayBuffer(binaryString.audio.src);
-             else 
-                 buffer = binaryString.audioBuffer;
-             audioAPI.start();
-             return audioAPI.playClip(trackName, buffer,audioAPI.getCurrentTime(),  dur);
-         }
+        async function playAudioForDuration(binaryString, trackName, dur) {
+            await synchronize();
+            let buffer;
+            if (binaryString.audio.src.includes('data:'))
+                buffer = base64toArrayBuffer(binaryString.audio.src);
+            else
+                buffer = binaryString.audioBuffer;
+            audioAPI.start();
+            return audioAPI.playClip(trackName, buffer, audioAPI.getCurrentTime(), dur);
+        }
 
          async function playChord(trackName, listOfNotes, noteDuration, velocity=75){
             for (const note of listOfNotes){
@@ -5699,75 +5699,75 @@
                     throw Error('Please insert a valid MIDI note(s) name or value e.g C3 or 60');
                 }
             }
-         }
+        }
 
 
-         async function setTrackEffect(trackName, effectName, level){
-             const effectType = availableEffects[effectName];
-             await audioAPI.applyTrackEffect(trackName,effectName, effectType);
-             const parameters = audioAPI.getAvailableEffectParameters(effectType);
-             var effectOptions = {};
-             for(let i = 0; i < parameters.length; i++){
+        async function setTrackEffect(trackName, effectName, level) {
+            const effectType = availableEffects[effectName];
+            await audioAPI.applyTrackEffect(trackName, effectName, effectType);
+            const parameters = audioAPI.getAvailableEffectParameters(effectType);
+            var effectOptions = {};
+            for (let i = 0; i < parameters.length; i++) {
                 console.log(parameters[i].name);
                 var parameterValue = parameters[i].name;
                 effectOptions[parameterValue] = level;
-             }
-             console.log(effectOptions);
-             await audioAPI.updateTrackEffect(trackName,effectName,effectOptions);
-         }
+            }
+            console.log(effectOptions);
+            await audioAPI.updateTrackEffect(trackName, effectName, effectOptions);
+        }
 
-         function createTrack(trackName){
-             audioAPI.createTrack(trackName);
-         }
+        function createTrack(trackName) {
+            audioAPI.createTrack(trackName);
+        }
 
-         function stopAudio(){
-             audioAPI.stop();
-             audioAPI.clearAllTracks();
-             audioAPI.start();
-         }
-         async function addFxPreset(track, effect) {
-             const effectName = EffectsPreset[effect][0];
-             await audioAPI.applyTrackEffect(track, effectName, EffectType[effectName]);
-             const effectOptions = EffectsPreset[effect][1];
-             await audioAPI.updateTrackEffect(track, effectName, effectOptions);
-         }
+        function stopAudio() {
+            audioAPI.stop();
+            audioAPI.clearAllTracks();
+            audioAPI.start();
+        }
+        async function addFxPreset(track, effect) {
+            const effectName = EffectsPreset[effect][0];
+            await audioAPI.applyTrackEffect(track, effectName, EffectType[effectName]);
+            const effectOptions = EffectsPreset[effect][1];
+            await audioAPI.updateTrackEffect(track, effectName, effectOptions);
+        }
 
-         async function wait(duration) {
-             return new Promise(resolve => {
-                 setTimeout(resolve, duration * 1000);
-             })
-         }
+        async function wait(duration) {
+            return new Promise(resolve => {
+                setTimeout(resolve, duration * 1000);
+            })
+        }
          // ----------------------------------------------------------------------
          class MusicApp extends Extension {
-             constructor(ide) {
-                 super('MusicApp');
-                 this.ide = ide;
-                 const oldStopAllActiveSounds = StageMorph.prototype.runStopScripts;
-                 StageMorph.prototype.runStopScripts = function(){
-                     oldStopAllActiveSounds.call(this);
-                     stopAudio();
-                 };
-                 this.ide.hideCategory("sound");
-             }
+            constructor(ide) {
+                super('MusicApp');
+                this.ide = ide;
+                const oldStopAllActiveSounds = StageMorph.prototype.runStopScripts;
+                StageMorph.prototype.runStopScripts = function(){
+                    oldStopAllActiveSounds.call(this);
+                    stopAudio();
+                };
+                this.ide.hideCategory("sound");
+            }
 
 
-             onOpenRole() {
-                 for (var i =0; i <this.ide.sprites.contents.length; i++){
+            onOpenRole() {
+                for (var i =0; i <this.ide.sprites.contents.length; i++){
                     createTrack(this.ide.sprites.contents[i].id);
-                 }
-             }
+                }
+            }
 
-             onNewSprite(sprite){
-                 createTrack(sprite.id);
-             }
+            onNewSprite(sprite){
+                createTrack(sprite.id);
+            }
 
-             getMenu() { return {}; }
+            getMenu() { return {}; }
 
-             getCategories() {
-                 return [
-                     new Extension.Category('music', new Color(148,0,211)),
-                 ];
-             }
+            getCategories() {
+                return [
+                    new Extension.Category('music', new Color(148,0,211)),
+                ];
+            }
 
              getPalette() {
                  const blocks = [
@@ -5801,62 +5801,62 @@
                      return new Extension.Block(name, type, category, spec, defaults, action)
                  }
                  return [
-                     block('playAudioClip', 'command', 'music', 'play audio clip %s', ['clip'], function (audioBuffer){
-                         this.runAsyncFn(async () =>{
+                     block('playAudioClip', 'command', 'music', 'play audio clip %s', ['clip'], function (audioBuffer) {
+                         this.runAsyncFn(async () => {
                              const trackName = this.receiver.id;
                              const duration = await playAudio(audioBuffer, trackName);
-                             await wait(duration-.02);
-                         },{ args: [], timeout: I32_MAX });
+                             await wait(duration - .02);
+                         }, { args: [], timeout: I32_MAX });
                      }),
-                     block('playAudioClipforDuration', 'command', 'music', 'play audio clip for duration %n %s', ['1', 'clip'], function (dur,audioBuffer){
-                         this.runAsyncFn(async () =>{
+                     block('playAudioClipforDuration', 'command', 'music', 'play audio clip for duration %n %s', ['1', 'clip'], function (dur, audioBuffer) {
+                         this.runAsyncFn(async () => {
                              const trackName = this.receiver.id;
                              const duration = await playAudioForDuration(audioBuffer, trackName, dur);
-                             await wait(duration-Math.max(.02,0));
-                         },{ args: [], timeout: I32_MAX });
+                             await wait(duration - Math.max(.02, 0));
+                         }, { args: [], timeout: I32_MAX });
                      }),
                      block('playNote', 'command', 'music', 'play %noteDurations note(s) %s', ['', 'C3'], function (noteDuration, input){
                         console.log(input);
                          this.runAsyncFn(async () =>{
                              const trackName = this.receiver.id;
-                             if(input.contents === undefined){
-                                if(typeof input === "string" && (input in availableMidiNotes)){
-                                    const blockduration = await audioAPI.playNote(trackName,availableMidiNotes[input], audioAPI.getCurrentTime(), availableNoteDurations[noteDuration]);
-                                    await wait(blockduration);
-                                }
-                                else if(typeof input === 'number'){
-                                    const blockduration = await audioAPI.playNote(trackName,input, audioAPI.getCurrentTime(), availableNoteDurations[noteDuration]);
-                                    await wait(blockduration);
-                                }
-                                else {
-                                    throw Error('Please insert a valid MIDI note(s) name or value e.g C3 or 60');
-                                }
+                             if (input.contents === undefined) {
+                                 if (typeof input === "string" && (input in availableMidiNotes)) {
+                                     const blockduration = await audioAPI.playNote(trackName, availableMidiNotes[input], audioAPI.getCurrentTime(), availableNoteDurations[noteDuration]);
+                                     await wait(blockduration);
+                                 }
+                                 else if (typeof input === 'number') {
+                                     const blockduration = await audioAPI.playNote(trackName, input, audioAPI.getCurrentTime(), availableNoteDurations[noteDuration]);
+                                     await wait(blockduration);
+                                 }
+                                 else {
+                                     throw Error('Please insert a valid MIDI note(s) name or value e.g C3 or 60');
+                                 }
                              }
                              else {
-                             if(input.contents.length === 1){
-                                const note = input.contents[0];
-                                if(typeof note === "string" && (note in availableMidiNotes)){
-                                    const blockduration = await audioAPI.playNote(trackName,availableMidiNotes[note], audioAPI.getCurrentTime(), availableNoteDurations[noteDuration]);
-                                    await wait(blockduration);
-                                }
-                                else if(typeof note === 'number'){
-                                    const blockduration = await audioAPI.playNote(trackName,note, audioAPI.getCurrentTime(), availableNoteDurations[noteDuration]);
-                                    await wait(blockduration);
-                                }
-                                else {
-                                    throw Error('Please insert a valid MIDI note(s) name or value e.g C3 or 60');
-                                }
-                            }
-                            else if(input.contents.length > 1){
-                                const duration = await playChord(trackName, input.contents, availableNoteDurations[noteDuration]);
-                                await wait(duration);
-                            }
-                            // else if(input.contents.length > 5){
-                            //     const duration = await playScale(trackName, input.contents, availableNoteDurations[noteDuration]);
-                            //     await wait(duration);
-                            // }
-                        }
-                         },{ args: [], timeout: I32_MAX });
+                                 if (input.contents.length === 1) {
+                                     const note = input.contents[0];
+                                     if (typeof note === "string" && (note in availableMidiNotes)) {
+                                         const blockduration = await audioAPI.playNote(trackName, availableMidiNotes[note], audioAPI.getCurrentTime(), availableNoteDurations[noteDuration]);
+                                         await wait(blockduration);
+                                     }
+                                     else if (typeof note === 'number') {
+                                         const blockduration = await audioAPI.playNote(trackName, note, audioAPI.getCurrentTime(), availableNoteDurations[noteDuration]);
+                                         await wait(blockduration);
+                                     }
+                                     else {
+                                         throw Error('Please insert a valid MIDI note(s) name or value e.g C3 or 60');
+                                     }
+                                 }
+                                 else if (input.contents.length > 1) {
+                                     const duration = await playChord(trackName, input.contents, availableNoteDurations[noteDuration]);
+                                     await wait(duration);
+                                 }
+                                 // else if(input.contents.length > 5){
+                                 //     const duration = await playScale(trackName, input.contents, availableNoteDurations[noteDuration]);
+                                 //     await wait(duration);
+                                 // }
+                             }
+                         }, { args: [], timeout: I32_MAX });
                      }),
                      block('playNoteWithIntensity', 'command', 'music', 'play %noteDurations note(s) %s amp %n', ['', 'C3', '75'], function (noteDuration, input, velocity){
                         console.log(input);
@@ -5907,21 +5907,21 @@
                      }),
                      block('note', 'reporter', 'music', 'note %midiNote', [], function (note){
 
-                        if(note.includes('s')){
-                            const startingNote = note.split('s')[0];
-                            var startingMidiNumber = availableMidiNotes[startingNote];
-                            const reg = new RegExp('s', 'g');
-                            const offsetSharp = (note.match(reg)|| []).length;
-                            return startingMidiNumber + offsetSharp;
-                        }
-                        else if (note.includes('b')){
-                            const startingNote = note.split('b')[0];
-                            var startingMidiNumber = availableMidiNotes[startingNote];
-                            const reg = new RegExp('b', 'g');
-                            const offsetFlat = (note.match(reg)|| []).length;
-                            return startingMidiNumber + offsetFlat;
-                        }
-                        return availableMidiNotes[note];
+                         if (note.includes('s')) {
+                             const startingNote = note.split('s')[0];
+                             var startingMidiNumber = availableMidiNotes[startingNote];
+                             const reg = new RegExp('s', 'g');
+                             const offsetSharp = (note.match(reg) || []).length;
+                             return startingMidiNumber + offsetSharp;
+                         }
+                         else if (note.includes('b')) {
+                             const startingNote = note.split('b')[0];
+                             var startingMidiNumber = availableMidiNotes[startingNote];
+                             const reg = new RegExp('b', 'g');
+                             const offsetFlat = (note.match(reg) || []).length;
+                             return startingMidiNumber + offsetFlat;
+                         }
+                         return availableMidiNotes[note];
 
                     }),
                      block('scales', 'reporter', 'music', 'note %n type %scaleTypes scale', ['', 'Major'], function (rootNote, type){
@@ -5931,18 +5931,18 @@
                                 majorScale[index] = element + rootNote;
                             });
 
-                            return new List(majorScale);
-                        }
-                        else if (type === "Minor"){
-                            const minorScale = [0,2,3,5,7,8,10,12];
-                            minorScale.forEach((element,index) => {
-                                minorScale[index] = element + rootNote;
-                            });
-                            return new List(minorScale);
-                        }
-                        else {
-                            throw Error('Please select a valid scale type');
-                        }
+                             return new List(majorScale);
+                         }
+                         else if (type === "Minor") {
+                             const minorScale = [0, 2, 3, 5, 7, 8, 10, 12];
+                             minorScale.forEach((element, index) => {
+                                 minorScale[index] = element + rootNote;
+                             });
+                             return new List(minorScale);
+                         }
+                         else {
+                             throw Error('Please select a valid scale type');
+                         }
 
                    }),
                    block('chords', 'reporter', 'music', 'note %n type %chordTypes chord', ['','Major'], function (rootNote, type){
@@ -6013,14 +6013,14 @@
                              await setTrackEffect(trackName, effectName, level/100);
                          },{ args: [], timeout: I32_MAX });
                      }),
-                     block('clearTrackEffects', 'command', 'music','clear track effects', [], function (){
-                        this.runAsyncFn(async () =>{
-                            const trackName = this.receiver.id;
-                            for(const effectName in availableEffects){
-                                await audioAPI.removeTrackEffect(trackName,effectName);
-                            }
-                        },{ args: [], timeout: I32_MAX });
-                    }),
+                     block('clearTrackEffects', 'command', 'music', 'clear track effects', [], function () {
+                         this.runAsyncFn(async () => {
+                             const trackName = this.receiver.id;
+                             for (const effectName in availableEffects) {
+                                 await audioAPI.removeTrackEffect(trackName, effectName);
+                             }
+                         }, { args: [], timeout: I32_MAX });
+                     }),
                      block('presetEffect', 'command', 'music', 'preset effects %fxPreset %onOff', ['', 'on'], function (effect, status) {
                          const trackName = this.receiver.id;
                          if (effect != '') {
@@ -6036,96 +6036,105 @@
                              }
                          } else {
                              throw Error('must select an effect');
-                         }         
+                         }
                      }),
                      block('setInputDevice', 'command', 'music', 'set input device: %inputDevice', [''], function (device) {
                          const trackName = this.receiver.id;
 
-                        if (device === '') 
-                            this.runAsyncFn(async () => {
-                                disconnectDevices(trackName);
-                            }, { args: [], timeout: I32_MAX });
-                        else if (midiDevices.indexOf(device) != -1)
-                            midiConnect(trackName, device);
-                        else if (audioDevices.indexOf(device != -1))
-                            audioConnect(trackName, device);
-                        else
-                            throw Error('device not found');
+                         if (device === '')
+                             this.runAsyncFn(async () => {
+                                 disconnectDevices(trackName);
+                             }, { args: [], timeout: I32_MAX });
+                         else if (midiDevices.indexOf(device) != -1)
+                             midiConnect(trackName, device);
+                         else if (audioDevices.indexOf(device != -1))
+                             audioConnect(trackName, device);
+                         else
+                             throw Error('device not found');
 
-                        if (midiInstruments.length > 0)
-                            audioAPI.updateInstrument(trackName, midiInstruments[0]).then(() => {
-                                console.log('default instrument set');
-                            });
-                        else
-                            console.log('no default instruments');
-                    }),
-                    block('startRecordingInput', 'command', 'music', 'start recording input', [], function () {
-                        const trackName = this.receiver.id;
-                        switch (currentDeviceType) {
-                            case 'midi':
-                                lastRecordedClip = audioAPI.recordMidiClip(
-                                    trackName, audioAPI.getCurrentTime()
-                                );
-                                break;
-                            case 'audio':
-                                lastRecordedClip = audioAPI.recordAudioClip(
-                                    trackName, audioAPI.getCurrentTime()
-                                );
-                                break;
-                        }
-                        recordingInProgress = true;
-                    }),
-                    block('recordInputForDuration', 'command', 'music', 'record input for %n seconds', [0], function (time) {
-                        const trackName = this.receiver.id;
-                        switch (currentDeviceType) {
-                            case 'midi':
-                                lastRecordedClip = audioAPI.recordMidiClip(
-                                    trackName, audioAPI.getCurrentTime(), time
-                                );
-                                break;
-                            case 'audio':
-                                lastRecordedClip = audioAPI.recordAudioClip(
-                                    trackName, audioAPI.getCurrentTime(), time
-                                );
-                                break;
-                        }
-                        recordingInProgress = true;
-                    }),
-                    block('setInstrument', 'command', 'music', 'set instrument %webMidiInstrument', ['Grand Piano'], function(instrument) {
-                        const trackName = this.receiver.id;
-                        this.runAsyncFn(async () => {
-                            await changeInsturment(trackName,instrument);
-                        }, { args: [], timeout: I32_MAX });
-                    }),
-                    block('stopRecording', 'command', 'music', 'stop recording', [], function() {
-                        this.runAsyncFn(async () => {
-                            await lastRecordedClip.finalize();
-                        }, { args: [], timeout: I32_MAX });
-                        recordingInProgress = false;
-                    }),
-                    // block('exportAudio', 'command', 'music', 'export %s as %fileFormats', ['clip'], function (clip, format) {
-                    //     this.runAsyncFn(async () => {
-                    //         await exportClip(clip, format);
-                    //     }, { args: [], timeout: I32_MAX });
-                    // }),
-                    block('lastRecordedClip', 'reporter', 'music', 'last recorded clip', [], function () {
-                        if (recordingInProgress)
-                            throw Error('recording in progress');
-                        else if (lastRecordedClip == null)
-                            throw Error('no clip found');
-                        else {
-                            return this.runAsyncFn(async () => {
-                                let temp = await clipToSnap(lastRecordedClip);
-                                temp.audioBuffer = await lastRecordedClip.getEncodedData(EncodingType['WAV']);
-                                return temp;
-                            }, { args: [], timeout: I32_MAX });
-                        }
-                            // return this.runAsyncFn(async () => {
-                            //     return await clipToSnap(lastRecordedClip);
-                            // }, { args: [], timeout: I32_MAX });
-                    }),
-                ];
-            }
+                         if (midiInstruments.length > 0)
+                             audioAPI.updateInstrument(trackName, midiInstruments[0]).then(() => {
+                                 console.log('default instrument set');
+                             });
+                         else
+                             console.log('no default instruments');
+                     }),
+                     block('startRecordingInput', 'command', 'music', 'start recording input', [], function () {
+                         const trackName = this.receiver.id;
+                         switch (currentDeviceType) {
+                             case 'midi':
+                                 lastRecordedClip = audioAPI.recordMidiClip(
+                                     trackName, audioAPI.getCurrentTime()
+                                 );
+                                 break;
+                             case 'audio':
+                                 lastRecordedClip = audioAPI.recordAudioClip(
+                                     trackName, audioAPI.getCurrentTime()
+                                 );
+                                 break;
+                         }
+                         recordingInProgress = true;
+                     }),
+                     block('recordInputForDuration', 'command', 'music', 'record input for %n seconds', [0], function (time) {
+                         const trackName = this.receiver.id;
+                         switch (currentDeviceType) {
+                             case 'midi':
+                                 lastRecordedClip = audioAPI.recordMidiClip(
+                                     trackName, audioAPI.getCurrentTime(), time
+                                 );
+                                 break;
+                             case 'audio':
+                                 lastRecordedClip = audioAPI.recordAudioClip(
+                                     trackName, audioAPI.getCurrentTime(), time
+                                 );
+                                 break;
+                         }
+                         recordingInProgress = true;
+                     }),
+                     block('startRecording', 'command', 'music', 'start recording master', [], function () {
+                         lastRecordedClip = audioAPI.recordOutput();
+                         recordingInProgress = true;
+                     }),
+                     block('recordForDuration', 'command', 'music', 'record master for %n seconds', [0], function (time) {
+                         lastRecordedClip = audioAPI.recordOutput(null, null, time);
+                         recordingInProgress = true;
+                     }),
+                     block('setInstrument', 'command', 'music', 'set instrument %webMidiInstrument', ['Grand Piano'], function (instrument) {
+                         const trackName = this.receiver.id;
+                         this.runAsyncFn(async () => {
+                             await changeInsturment(trackName, instrument);
+                         }, { args: [], timeout: I32_MAX });
+                     }),
+                     block('stopRecording', 'command', 'music', 'stop recording', [], function () {
+                         this.runAsyncFn(async () => {
+                             await lastRecordedClip.finalize();
+                         }, { args: [], timeout: I32_MAX });
+                         recordingInProgress = false;
+                     }),
+                     // block('exportAudio', 'command', 'music', 'export %s as %fileFormats', ['clip'], function (clip, format) {
+                     //     this.runAsyncFn(async () => {
+                     //         await exportClip(clip, format);
+                     //     }, { args: [], timeout: I32_MAX });
+                     // }),
+                     block('getLastRecordedClip', 'reporter', 'music', 'last recorded clip', [], function () {
+                         if (recordingInProgress)
+                             throw Error('recording in progress');
+                         else if (lastRecordedClip == null)
+                             throw Error('no clip found');
+                         else {
+                             return this.runAsyncFn(async () => {
+                                 let temp = await clipToSnap(lastRecordedClip);
+                                 temp.audioBuffer = await lastRecordedClip.getEncodedData(EncodingType['WAV']);
+                                 return temp;
+                             }, { args: [], timeout: I32_MAX });
+                         }
+                         // return this.runAsyncFn(async () => {
+                         //     return await clipToSnap(lastRecordedClip);
+                         // }, { args: [], timeout: I32_MAX });
+                     }),
+                 ];
+             }
+             
             getLabelParts() { 
                 function identityMap(s) {
                     const res = {};
