@@ -1,4 +1,6 @@
+import { start } from "tone";
 import {WebAudioAPI} from "./webAudioAPI";
+import { duration } from "moment";
 
 (function () {
     const audioAPI = new WebAudioAPI();
@@ -170,61 +172,36 @@ import {WebAudioAPI} from "./webAudioAPI";
         return bytes.buffer;
      }
 
-    /**
-     * Synchronizes all clips being loaded
-     */
-
-    async function synchronize(){
-        let currentStart = syncStart++;
-        await wait(.005);
-        do {
-            currentStart++;
-            await wait(.005);
-        } while (currentStart != syncStart);
-        audioAPI.start();
-    }
-
-    /**
+     /**
      * Plays an audio clip
-     * @param {String} binaryString - binary string of audio file
-     * @param {String} trackName - name of track
+     * @param {String} trackName - name of CurrentTrack
+     * @param {String} clip - audioClip
+     * @param {Number} startTime - API time at which to start playback
+     * @param {Number} duration - length in seconds to play
      * @returns An Array Buffer
      */
-    async function playAudio(binaryString, trackName){
-        await synchronize();  
-        let buffer;
-        if (binaryString.audio.src.includes('data:'))
-             buffer = base64toArrayBuffer(binaryString.audio.src);
-        else 
-            buffer = binaryString.audioBuffer;
-        audioAPI.start();
-        return audioAPI.playClip(trackName, buffer, audioAPI.getCurrentTime(), 0);
+    async function playAudio(trackName, clip, startTime, duration = undefined){
+        const buffer = clip.audioBuffer || base64toArrayBuffer(clip.audio.src);
+        return audioAPI.playClip(trackName, buffer, startTime, duration);
     }
 
-    async function playAudioForDuration(binaryString, trackName, dur) {
-        await synchronize();
-        let buffer;
-        if (binaryString.audio.src.includes('data:'))
-            buffer = base64toArrayBuffer(binaryString.audio.src);
-        else
-            buffer = binaryString.audioBuffer;
-        audioAPI.start();
-        return audioAPI.playClip(trackName, buffer, audioAPI.getCurrentTime(), dur);
-    }
+     /**
+     * Plays an audio clip
+     * @param {String} trackName - name of CurrentTrack
+     * @param {List} notes - notes to be played
+     * @param {Number} startTime - API time at which to start playback
+     * @param {Number} noteDuration - duration of note to be played
+     * @param {Number} velocity - volume of note to be played
+     * @returns An Array Buffer
+     */
+    async function playChord(trackName, notes, startTime, noteDuration, velocity = undefined){
+        if (notes.length === 0) return 0;
 
-     async function playChord(trackName, listOfNotes, noteDuration, velocity=.7){
-        for (const note of listOfNotes){
-            if(typeof note === "string" && (note in availableMidiNotes)){
-                audioAPI.playNote(trackName,availableMidiNotes[note], audioAPI.getCurrentTime(), noteDuration, velocity);
-            }
-            else if(typeof note === 'number'){
-                audioAPI.playNote(trackName,note, audioAPI.getCurrentTime(), noteDuration, velocity);
-            
-            }
-            else {
-                throw Error('Please insert a valid MIDI note(s) name or value e.g C3 or 60');
-            }
+        let ret = Infinity;
+        for (const note of notes){
+            ret = Math.min(ret, await audioAPI.playNote(trackName, note, startTime, noteDuration, velocity));
         }
+        return ret;
     }
 
 
@@ -261,17 +238,36 @@ import {WebAudioAPI} from "./webAudioAPI";
         const effectOptions = EffectsPreset[effect][1];
         await audioAPI.updateTrackEffect(track, effectName, effectOptions);
     }
+    function setupTrack(name){
+        createTrack(name);
+        for(const inst of midiInstruments){
+            changeInsturment(name,inst);
+        }
+        changeInsturment(name, "Synthesizer");
+    }
+    function setupProcess(proc){
+        if(proc.musicInfo) return;
+        proc.musicInfo = {
+            t: audioAPI.getCurrentTime(),
+        };
+    }
 
     async function wait(duration) {
         return new Promise(resolve => {
             setTimeout(resolve, duration * 1000);
         })
     }
+    async function waitUntil(t){
+        await wait(t - audioAPI.getCurrentTime());
+    }
+
+
      // ----------------------------------------------------------------------
      class MusicApp extends Extension {
         constructor(ide) {
             super('MusicApp');
             this.ide = ide;
+            appliedEffects = [];
             const oldStopAllActiveSounds = StageMorph.prototype.runStopScripts;
             StageMorph.prototype.runStopScripts = function(){
                 oldStopAllActiveSounds.call(this);
@@ -282,24 +278,14 @@ import {WebAudioAPI} from "./webAudioAPI";
 
 
         onOpenRole() {
-            for (var i =0; i <this.ide.sprites.contents.length; i++){
-                var trackName = this.ide.sprites.contents[i].id;
-                createTrack(trackName);
-                for(const inst of midiInstruments){
-                    changeInsturment(trackName, inst);
-                    wait(0.001);
-                }
-                changeInsturment(trackName, "Synthesizer");
+            for(const sprite of this.ide.sprites.contents){
+                setupTrack(sprite.id);
             }
 
         }
 
         onNewSprite(sprite){
-            createTrack(sprite.id);
-            for(const inst of midiInstruments){
-                changeInsturment(sprite.id, inst);
-            }
-            changeInsturment(sprite.id, "Synthesizer");
+            setupTrack(sprite.id);
         }
 
         getMenu() { return {}; }
@@ -312,24 +298,27 @@ import {WebAudioAPI} from "./webAudioAPI";
 
          getPalette() {
              const blocks = [
-                 new Extension.Palette.Block('playAudioClip'),
-                 new Extension.Palette.Block('playAudioClipforDuration'),
-                 new Extension.Palette.Block('stopClips'),
-                 new Extension.Palette.Block('setTrackEffect'),
-                 new Extension.Palette.Block('clearTrackEffects'),
-                 new Extension.Palette.Block('presetEffect'),
-                 new Extension.Palette.Block('setInputDevice'),
-                 new Extension.Palette.Block('setInstrument'),
-                 new Extension.Palette.Block('startRecordingInput'),
-                 new Extension.Palette.Block('recordInputForDuration'),
-                 new Extension.Palette.Block('stopRecording'),
-                 //new Extension.Palette.Block('exportAudio'),
-                 new Extension.Palette.Block('playNote'),
-                 new Extension.Palette.Block('playNoteWithIntensity'),
-                 new Extension.Palette.Block('scales'),
-                 new Extension.Palette.Block('chords'),
-                 new Extension.Palette.Block('note'),
-                 new Extension.Palette.Block('lastRecordedClip'),
+                new Extension.Palette.Block('setInstrument'),
+                new Extension.Palette.Block('playNote'),
+                new Extension.Palette.Block('playNoteWithAmp'),
+                new Extension.Palette.Block('playAudioClip'),
+                new Extension.Palette.Block('playAudioClipforDuration'),
+                new Extension.Palette.Block('stopClips'),
+                '-',
+                new Extension.Palette.Block('presetEffect'),
+                new Extension.Palette.Block('setTrackEffect'),
+                new Extension.Palette.Block('clearTrackEffects'),
+                '_',
+                new Extension.Palette.Block('setInputDevice'),
+                new Extension.Palette.Block('startRecordingInput'),
+                new Extension.Palette.Block('recordInputForDuration'),
+                new Extension.Palette.Block('stopRecording'),
+                new Extension.Palette.Block('lastRecordedClip'),
+                '_',
+                new Extension.Palette.Block('note'),
+                new Extension.Palette.Block('chords'),
+                new Extension.Palette.Block('scales'),
+                 
              ];
              return [
                  new Extension.PaletteCategory('music', blocks, SpriteMorph),
